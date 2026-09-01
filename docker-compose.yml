@@ -169,7 +169,27 @@ services:
   # Cada uno se compila y despliega como un contenedor Nginx separado.
   # ---------------------------------------------------------------------
   shell:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/shell } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/shell
+        # PUBLIC_HOST = IP pública o dominio del servidor donde corre esto
+        # (ver .env: sin él, el shell compilado apuntaría a "localhost",
+        # que en el navegador del usuario final no resuelve al servidor).
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+        VITE_REMOTE_COMPANIES_USERS: http://${PUBLIC_HOST:-localhost}:5175/assets/remoteEntry.js
+        VITE_REMOTE_CONSENTS: http://${PUBLIC_HOST:-localhost}:5176/assets/remoteEntry.js
+        VITE_REMOTE_RAT: http://${PUBLIC_HOST:-localhost}:5177/assets/remoteEntry.js
+        VITE_REMOTE_ARCO: http://${PUBLIC_HOST:-localhost}:5178/assets/remoteEntry.js
+        VITE_REMOTE_BREACHES: http://${PUBLIC_HOST:-localhost}:5179/assets/remoteEntry.js
+        VITE_REMOTE_RETENTION: http://${PUBLIC_HOST:-localhost}:5180/assets/remoteEntry.js
+        VITE_REMOTE_ETHICS_CHANNEL: http://${PUBLIC_HOST:-localhost}:5181/assets/remoteEntry.js
+        VITE_REMOTE_MATURITY: http://${PUBLIC_HOST:-localhost}:5182/assets/remoteEntry.js
+        VITE_REMOTE_TRAINING: http://${PUBLIC_HOST:-localhost}:5183/assets/remoteEntry.js
+        VITE_REMOTE_CONTRACTS: http://${PUBLIC_HOST:-localhost}:5184/assets/remoteEntry.js
+        VITE_REMOTE_AUDIT: http://${PUBLIC_HOST:-localhost}:5185/assets/remoteEntry.js
+        VITE_REMOTE_EVIDENCE: http://${PUBLIC_HOST:-localhost}:5186/assets/remoteEntry.js
     ports: ["5173:80"]
     networks: [dpo-net]
 

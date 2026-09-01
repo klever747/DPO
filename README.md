@@ -212,23 +212,28 @@ misma base física, cada uno opera solo sobre su propio esquema.
 ## Despliegue con Docker Compose
 
 ```bash
-cp .env.example .env   # ajusta credenciales
-docker compose up --build
+cp .env.example .env   # ajusta credenciales y PUBLIC_HOST
+docker compose up --build -d
+docker compose run --rm migrate
 ```
 
 Esto levanta:
-- `postgres` (para desarrollo local completo; en producción usa el de
-  Hostinger y elimina/omite este servicio del compose, apuntando
-  `POSTGRES_HOST` al host de Hostinger),
+- `postgres` — en un VPS (con acceso root, como el de Hostinger) se usa
+  este mismo contenedor como base de datos de producción, con sus datos en
+  un volumen Docker persistente; no hace falta crear nada en el panel de
+  Hostinger. Si en cambio usas un PostgreSQL administrado aparte, omite
+  este servicio del compose y apunta `POSTGRES_HOST` a ese host.
 - `migrate` (aplica el esquema una vez),
 - los 12 microservicios + `gateway-api` (puertos 3000-3012),
 - el `shell` y los 12 módulos frontend, cada uno en su propio contenedor
   Nginx (puertos 5173, 5175-5186).
 
-Para producción, construye cada módulo frontend por separado con las
-variables `VITE_API_BASE_URL` y `VITE_REMOTE_*` apuntando a los dominios
-reales (ver `docker/frontend.Dockerfile` y `frontend/shell/.env.example`),
-ya que Vite las incrusta en tiempo de **build**, no de runtime.
+La variable `PUBLIC_HOST` (IP o dominio del servidor) se usa **solo** al
+compilar el `shell`: Vite la incrusta en el bundle del navegador, así que
+debe ser una dirección alcanzable por el usuario final — nunca `localhost`
+ni el nombre de un contenedor. Ver **[DEPLOY.md](./DEPLOY.md)** para la
+guía completa, paso a paso, de despliegue en un VPS de Hostinger por IP
+pública (sin dominio).
 
 ## Añadir un módulo nuevo
 
