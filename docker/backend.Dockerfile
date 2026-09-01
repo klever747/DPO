@@ -8,6 +8,8 @@ ARG SERVICE
 COPY package.json package-lock.json* ./
 COPY shared ./shared
 COPY services ./services
+COPY scripts ./scripts
+COPY db ./db
 
 RUN npm install --no-audit --no-fund
 RUN npm run build --workspace=services/${SERVICE}
