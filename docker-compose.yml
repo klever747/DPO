@@ -194,62 +194,122 @@ services:
     networks: [dpo-net]
 
   module-companies-users:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/companies-users } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/companies-users
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5175:80"]
     networks: [dpo-net]
 
   module-consents:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/consents } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/consents
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5176:80"]
     networks: [dpo-net]
 
   module-rat:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/rat } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/rat
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5177:80"]
     networks: [dpo-net]
 
   module-arco:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/arco } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/arco
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5178:80"]
     networks: [dpo-net]
 
   module-breaches:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/breaches } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/breaches
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5179:80"]
     networks: [dpo-net]
 
   module-retention:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/retention } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/retention
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5180:80"]
     networks: [dpo-net]
 
   module-ethics-channel:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/ethics-channel } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/ethics-channel
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5181:80"]
     networks: [dpo-net]
 
   module-maturity:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/maturity } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/maturity
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5182:80"]
     networks: [dpo-net]
 
   module-training:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/training } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/training
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5183:80"]
     networks: [dpo-net]
 
   module-contracts:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/contracts } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/contracts
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5184:80"]
     networks: [dpo-net]
 
   module-audit:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/audit } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/audit
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5185:80"]
     networks: [dpo-net]
 
   module-evidence:
-    build: { context: ., dockerfile: docker/frontend.Dockerfile, args: { MODULE_PATH: frontend/modules/evidence } }
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/evidence
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5186:80"]
     networks: [dpo-net]
 
