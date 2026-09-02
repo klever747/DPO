@@ -57,6 +57,9 @@ export class SolicitudArco {
   @Column({ type: 'text', nullable: true })
   respuesta?: string;
 
+  @Column({ name: 'documento_url', nullable: true })
+  documentoUrl?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

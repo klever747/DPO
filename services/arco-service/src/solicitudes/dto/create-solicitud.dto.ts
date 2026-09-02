@@ -26,4 +26,8 @@ export class CreateSolicitudDto {
   @IsOptional()
   @IsString()
   canalRecepcion?: string;
+
+  @IsOptional()
+  @IsString()
+  documentoUrl?: string;
 }

@@ -76,6 +76,8 @@ services:
     environment: { <<: *backend-env, ARCO_SERVICE_PORT: "3004" }
     depends_on: *backend-depends
     ports: ["3004:3004"]
+    volumes:
+      - arco_uploads:/app/uploads
     networks: [dpo-net]
 
   breach-service:
@@ -324,3 +326,4 @@ volumes:
   pgdata:
   consent_uploads:
   contracts_uploads:
+  arco_uploads:
