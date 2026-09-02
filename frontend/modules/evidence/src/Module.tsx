@@ -1,42 +1,52 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { apiFetch, omitEmpty } from './lib/api';
+import { abrirArchivoProtegido, apiFetch, apiUpload, omitEmpty } from './lib/api';
 import { Icon } from './ui/Icon';
 import { Modal } from './ui/Modal';
 import { TableSkeleton } from './ui/Skeleton';
 import { ToastProvider, useToast } from './ui/Toast';
 import './styles.css';
 
+interface EmpresaRef {
+  id: string;
+  nombre: string;
+}
+
 interface Evidencia {
   id: string;
+  empresaId: string;
   moduloOrigen: string;
+  referenciaId?: string;
   tipoEvidencia: string;
   nombreArchivo: string;
   urlAlmacenamiento: string;
+  hashIntegridad?: string;
   subidoPor?: string;
   fechaSubida: string;
 }
 
-function getEmpresaIdFromToken(): string | null {
-  const token = localStorage.getItem('dpo_token');
-  if (!token) return null;
-  try {
-    return JSON.parse(atob(token.split('.')[1])).empresaId ?? null;
-  } catch {
-    return null;
-  }
-}
-
-const MODULOS = ['consent', 'rat', 'arco', 'breach', 'retention', 'ethics', 'maturity', 'training', 'contracts', 'audit'];
+const MODULOS = ['consent', 'rat', 'arco', 'breach', 'retention', 'ethics', 'maturity', 'training', 'contracts', 'audit', 'otro'];
 const TIPOS = ['documento', 'captura', 'registro', 'firma', 'otro'];
-const emptyForm = { moduloOrigen: 'consent', referenciaId: '', tipoEvidencia: 'documento', nombreArchivo: '', urlAlmacenamiento: '', subidoPor: '' };
+const emptyForm = { empresaId: '', moduloOrigen: 'otro', referenciaId: '', tipoEvidencia: 'documento', subidoPor: '' };
 
 function ModuleContent() {
   const toast = useToast();
+  const [empresas, setEmpresas] = useState<EmpresaRef[] | null>(null);
   const [items, setItems] = useState<Evidencia[] | null>(null);
   const [query, setQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [documentoFile, setDocumentoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+
+  async function cargarEmpresas() {
+    try {
+      const res = await apiFetch<{ data: EmpresaRef[] }>('/empresas');
+      setEmpresas(res.data);
+    } catch (err) {
+      toast.error(`No se pudieron cargar las empresas: ${(err as Error).message}`);
+      setEmpresas([]);
+    }
+  }
 
   async function cargar() {
     try {
@@ -49,18 +59,44 @@ function ModuleContent() {
   }
 
   useEffect(() => {
+    cargarEmpresas();
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function abrirCrear() {
+    setForm({ ...emptyForm, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setDocumentoFile(null);
+    setShowModal(true);
+  }
+
   async function crear(e: FormEvent) {
     e.preventDefault();
+    if (!form.empresaId) {
+      toast.error('Selecciona la empresa de la evidencia');
+      return;
+    }
+    if (!documentoFile) {
+      toast.error('Selecciona el documento PDF escaneado');
+      return;
+    }
     setSaving(true);
     try {
-      const empresaId = getEmpresaIdFromToken();
-      await apiFetch('/evidencias', { method: 'POST', body: JSON.stringify(omitEmpty({ ...form, empresaId })) });
-      toast.success(`Evidencia "${form.nombreArchivo}" registrada`);
+      const up = await apiUpload<{ url: string; nombreArchivo: string; hashIntegridad: string }>('/evidencias/documento', documentoFile);
+      await apiFetch('/evidencias', {
+        method: 'POST',
+        body: JSON.stringify(
+          omitEmpty({
+            ...form,
+            nombreArchivo: up.nombreArchivo,
+            urlAlmacenamiento: up.url,
+            hashIntegridad: up.hashIntegridad,
+          }),
+        ),
+      });
+      toast.success(`Evidencia "${up.nombreArchivo}" registrada`);
       setForm(emptyForm);
+      setDocumentoFile(null);
       setShowModal(false);
       cargar();
     } catch (err) {
@@ -81,11 +117,19 @@ function ModuleContent() {
     }
   }
 
+  async function verDocumento(url: string) {
+    try {
+      await abrirArchivoProtegido(url);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
   const filtrados = useMemo(() => {
     if (!items) return [];
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((i) => [i.nombreArchivo, i.moduloOrigen, i.tipoEvidencia].some((v) => v?.toLowerCase().includes(q)));
+    return items.filter((i) => [i.nombreArchivo, i.moduloOrigen, i.tipoEvidencia, i.subidoPor].some((v) => v?.toLowerCase().includes(q)));
   }, [items, query]);
 
   return (
@@ -95,7 +139,7 @@ function ModuleContent() {
           <h2>Evidencias</h2>
           <p className="dpo-module-subtitle">Repositorio de evidencias documentales de todos los módulos de cumplimiento.</p>
         </div>
-        <button className="dpo-btn dpo-btn-primary" onClick={() => setShowModal(true)}>
+        <button className="dpo-btn dpo-btn-primary" onClick={abrirCrear}>
           <Icon name="plus" size={16} /> Nueva evidencia
         </button>
       </div>
@@ -113,7 +157,7 @@ function ModuleContent() {
         <div className="dpo-empty">
           <Icon name="archive" size={32} />
           <p className="dpo-empty-title">Sin evidencias registradas</p>
-          <p>Registra la primera evidencia documental (URL de almacenamiento externo).</p>
+          <p>Sube el primer documento PDF escaneado como evidencia.</p>
         </div>
       ) : (
         <div className="dpo-table-wrap">
@@ -124,12 +168,15 @@ function ModuleContent() {
             <tbody>
               {filtrados.map((e) => (
                 <tr key={e.id}>
-                  <td><a href={e.urlAlmacenamiento} target="_blank" rel="noreferrer"><strong>{e.nombreArchivo}</strong></a></td>
+                  <td><strong>{e.nombreArchivo}</strong></td>
                   <td><span className="dpo-badge dpo-badge-neutral">{e.moduloOrigen}</span></td>
                   <td>{e.tipoEvidencia}</td>
                   <td>{e.subidoPor || '—'}</td>
                   <td className="dpo-muted">{new Date(e.fechaSubida).toLocaleDateString()}</td>
                   <td className="dpo-table-actions">
+                    <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => verDocumento(e.urlAlmacenamiento)} title="Ver/descargar PDF">
+                      <Icon name="file-text" size={15} />
+                    </button>
                     <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminar(e.id, e.nombreArchivo)} title="Eliminar">
                       <Icon name="trash" size={15} />
                     </button>
@@ -144,13 +191,25 @@ function ModuleContent() {
       {showModal && (
         <Modal title="Nueva evidencia" onClose={() => setShowModal(false)}>
           <form className="dpo-form" onSubmit={crear}>
+            {(empresas?.length ?? 0) > 1 && (
+              <div className="dpo-field">
+                <label>Empresa *</label>
+                <select value={form.empresaId} onChange={(e) => setForm({ ...form, empresaId: e.target.value })} required>
+                  <option value="">Selecciona una empresa</option>
+                  {(empresas ?? []).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+            )}
             <div className="dpo-field">
-              <label>Nombre del archivo *</label>
-              <input value={form.nombreArchivo} onChange={(e) => setForm({ ...form, nombreArchivo: e.target.value })} required />
-            </div>
-            <div className="dpo-field">
-              <label>URL de almacenamiento *</label>
-              <input value={form.urlAlmacenamiento} onChange={(e) => setForm({ ...form, urlAlmacenamiento: e.target.value })} placeholder="https://…" required />
+              <label>Documento escaneado (PDF) *</label>
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={(e) => setDocumentoFile(e.target.files?.[0] ?? null)}
+              />
+              <p className="dpo-muted" style={{ fontSize: '0.78rem', margin: '4px 0 0' }}>
+                Se calcula automáticamente un hash de integridad (SHA-256) del archivo al subirlo.
+              </p>
             </div>
             <div className="dpo-form-row">
               <div className="dpo-field">
@@ -167,8 +226,8 @@ function ModuleContent() {
               </div>
             </div>
             <div className="dpo-field">
-              <label>ID de referencia (del registro relacionado) *</label>
-              <input value={form.referenciaId} onChange={(e) => setForm({ ...form, referenciaId: e.target.value })} placeholder="UUID del registro en el módulo de origen" required />
+              <label>ID de referencia (opcional)</label>
+              <input value={form.referenciaId} onChange={(e) => setForm({ ...form, referenciaId: e.target.value })} placeholder="UUID del registro relacionado, si aplica" />
             </div>
             <div className="dpo-field">
               <label>Subido por</label>

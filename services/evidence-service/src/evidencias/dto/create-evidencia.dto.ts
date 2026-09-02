@@ -8,8 +8,9 @@ export class CreateEvidenciaDto {
   @IsString()
   moduloOrigen: string;
 
+  @IsOptional()
   @IsUUID()
-  referenciaId: string;
+  referenciaId?: string;
 
   @IsOptional()
   @IsEnum(TipoEvidencia)

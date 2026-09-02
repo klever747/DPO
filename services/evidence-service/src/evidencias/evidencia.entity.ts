@@ -19,8 +19,8 @@ export class Evidencia {
   @Column({ name: 'modulo_origen' })
   moduloOrigen: string;
 
-  @Column({ name: 'referencia_id', type: 'uuid' })
-  referenciaId: string;
+  @Column({ name: 'referencia_id', type: 'uuid', nullable: true })
+  referenciaId?: string;
 
   @Column({ name: 'tipo_evidencia', type: 'enum', enum: TipoEvidencia, enumName: 'tipo_evidencia', default: TipoEvidencia.DOCUMENTO })
   tipoEvidencia: TipoEvidencia;
