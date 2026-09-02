@@ -60,6 +60,8 @@ services:
     environment: { <<: *backend-env, CONSENT_SERVICE_PORT: "3002" }
     depends_on: *backend-depends
     ports: ["3002:3002"]
+    volumes:
+      - consent_uploads:/app/uploads
     networks: [dpo-net]
 
   rat-service:
@@ -318,3 +320,4 @@ networks:
 
 volumes:
   pgdata:
+  consent_uploads:

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { apiFetch, omitEmpty } from './lib/api';
+import { abrirArchivoProtegido, apiFetch, apiUpload, omitEmpty } from './lib/api';
 import { Icon } from './ui/Icon';
 import { Modal } from './ui/Modal';
 import { TableSkeleton } from './ui/Skeleton';
@@ -23,13 +23,26 @@ interface Consentimiento {
   id: string;
   titularId: string;
   finalidad: string;
+  baseLegal?: string;
   canal: string;
   estado: string;
   fechaOtorgamiento: string;
+  evidenciaUrl?: string;
 }
 
+/** Bases legales más habituales para el tratamiento de datos (LOPDP / RGPD). */
+const BASES_LEGALES = [
+  'Consentimiento del titular',
+  'Ejecución de un contrato',
+  'Cumplimiento de una obligación legal',
+  'Protección de intereses vitales',
+  'Cumplimiento de una misión de interés público',
+  'Interés legítimo del responsable',
+  'Otro',
+];
+
 const emptyTitular = { nombre: '', documentoIdentidad: '', email: '', empresaIds: [] as string[] };
-const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: '', canal: 'web', empresaId: '' };
+const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: BASES_LEGALES[0], canal: 'web', empresaId: '' };
 
 const estadoBadge: Record<string, string> = {
   otorgado: 'dpo-badge-success',
@@ -48,6 +61,7 @@ function ModuleContent() {
   const [showConsentimientoModal, setShowConsentimientoModal] = useState(false);
   const [nuevoTitular, setNuevoTitular] = useState(emptyTitular);
   const [nuevoConsentimiento, setNuevoConsentimiento] = useState(emptyConsentimiento);
+  const [evidenciaFile, setEvidenciaFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function cargarEmpresas() {
@@ -124,6 +138,7 @@ function ModuleContent() {
 
   function abrirCrearConsentimiento() {
     setNuevoConsentimiento({ ...emptyConsentimiento, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setEvidenciaFile(null);
     setShowConsentimientoModal(true);
   }
 
@@ -159,15 +174,32 @@ function ModuleContent() {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiFetch('/consentimientos', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoConsentimiento)) });
+      let evidenciaUrl: string | undefined;
+      if (evidenciaFile) {
+        const res = await apiUpload<{ url: string }>('/consentimientos/evidencia', evidenciaFile);
+        evidenciaUrl = res.url;
+      }
+      await apiFetch('/consentimientos', {
+        method: 'POST',
+        body: JSON.stringify(omitEmpty({ ...nuevoConsentimiento, evidenciaUrl })),
+      });
       toast.success('Consentimiento registrado');
       setNuevoConsentimiento(emptyConsentimiento);
+      setEvidenciaFile(null);
       setShowConsentimientoModal(false);
       cargarConsentimientos();
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function verEvidencia(url: string) {
+    try {
+      await abrirArchivoProtegido(url);
+    } catch (err) {
+      toast.error((err as Error).message);
     }
   }
 
@@ -303,6 +335,11 @@ function ModuleContent() {
                     <td><span className={`dpo-badge ${estadoBadge[c.estado] ?? 'dpo-badge-neutral'}`}>{c.estado}</span></td>
                     <td className="dpo-muted">{new Date(c.fechaOtorgamiento).toLocaleDateString()}</td>
                     <td className="dpo-table-actions">
+                      {c.evidenciaUrl && (
+                        <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => verEvidencia(c.evidenciaUrl!)} title="Ver evidencia (PDF)">
+                          <Icon name="clipboard" size={15} />
+                        </button>
+                      )}
                       {c.estado === 'otorgado' && (
                         <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => revocar(c.id)}>Revocar</button>
                       )}
@@ -380,7 +417,9 @@ function ModuleContent() {
             <div className="dpo-form-row">
               <div className="dpo-field">
                 <label>Base legal</label>
-                <input value={nuevoConsentimiento.baseLegal} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, baseLegal: e.target.value })} />
+                <select value={nuevoConsentimiento.baseLegal} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, baseLegal: e.target.value })}>
+                  {BASES_LEGALES.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
               </div>
               <div className="dpo-field">
                 <label>Canal</label>
@@ -393,6 +432,14 @@ function ModuleContent() {
                   <option value="presencial">Presencial</option>
                 </select>
               </div>
+            </div>
+            <div className="dpo-field">
+              <label>Evidencia (PDF)</label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setEvidenciaFile(e.target.files?.[0] ?? null)}
+              />
             </div>
             <div className="dpo-form-actions">
               <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowConsentimientoModal(false)}>Cancelar</button>
