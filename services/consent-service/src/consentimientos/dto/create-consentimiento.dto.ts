@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { CanalConsentimiento } from '../consentimiento.entity';
+import { CanalConsentimiento, EstadoDocumento, TipoArchivo } from '../consentimiento.entity';
 
 export class CreateConsentimientoDto {
   @IsUUID()
@@ -18,6 +18,14 @@ export class CreateConsentimientoDto {
   @IsOptional()
   @IsEnum(CanalConsentimiento)
   canal?: CanalConsentimiento;
+
+  @IsOptional()
+  @IsEnum(EstadoDocumento)
+  estadoDocumento?: EstadoDocumento;
+
+  @IsOptional()
+  @IsEnum(TipoArchivo)
+  tipoArchivo?: TipoArchivo;
 
   @IsOptional()
   @IsString()

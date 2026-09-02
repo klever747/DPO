@@ -24,6 +24,19 @@ export enum EstadoConsentimiento {
   EXPIRADO = 'expirado',
 }
 
+export enum EstadoDocumento {
+  FIRMADO = 'firmado',
+  EN_PROCESO = 'en_proceso',
+  NO_AUTORIZADO = 'no_autorizado',
+}
+
+export enum TipoArchivo {
+  FISICO = 'fisico',
+  DIGITAL = 'digital',
+  ESCANEADO = 'escaneado',
+  OTRO = 'otro',
+}
+
 @Entity({ name: 'consentimientos', schema: 'consent' })
 export class Consentimiento {
   @PrimaryGeneratedColumn('uuid')
@@ -53,6 +66,12 @@ export class Consentimiento {
 
   @Column({ type: 'enum', enum: EstadoConsentimiento, enumName: 'estado_consentimiento', default: EstadoConsentimiento.OTORGADO })
   estado: EstadoConsentimiento;
+
+  @Column({ name: 'estado_documento', type: 'enum', enum: EstadoDocumento, enumName: 'estado_documento', default: EstadoDocumento.EN_PROCESO })
+  estadoDocumento: EstadoDocumento;
+
+  @Column({ name: 'tipo_archivo', type: 'enum', enum: TipoArchivo, enumName: 'tipo_archivo', default: TipoArchivo.DIGITAL })
+  tipoArchivo: TipoArchivo;
 
   @Column({ name: 'fecha_otorgamiento', type: 'timestamptz' })
   fechaOtorgamiento: Date;

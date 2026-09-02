@@ -24,8 +24,9 @@ interface Consentimiento {
   titularId: string;
   finalidad: string;
   baseLegal?: string;
-  canal: string;
   estado: string;
+  estadoDocumento?: string;
+  tipoArchivo?: string;
   fechaOtorgamiento: string;
   evidenciaUrl?: string;
 }
@@ -41,13 +42,39 @@ const BASES_LEGALES = [
   'Otro',
 ];
 
+const TIPOS_ARCHIVO = [
+  { value: 'digital', label: 'Digital' },
+  { value: 'fisico', label: 'Físico' },
+  { value: 'escaneado', label: 'Escaneado' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const ESTADOS_DOCUMENTO = [
+  { value: 'en_proceso', label: 'En proceso' },
+  { value: 'firmado', label: 'Firmado' },
+  { value: 'no_autorizado', label: 'No autorizado' },
+];
+
 const emptyTitular = { nombre: '', documentoIdentidad: '', email: '', empresaIds: [] as string[] };
-const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: BASES_LEGALES[0], canal: 'web', empresaId: '' };
+const emptyConsentimiento = {
+  titularId: '',
+  finalidad: '',
+  baseLegal: BASES_LEGALES[0],
+  tipoArchivo: 'digital',
+  estadoDocumento: 'en_proceso',
+  empresaId: '',
+};
 
 const estadoBadge: Record<string, string> = {
   otorgado: 'dpo-badge-success',
   revocado: 'dpo-badge-danger',
   expirado: 'dpo-badge-neutral',
+};
+
+const estadoDocumentoBadge: Record<string, string> = {
+  firmado: 'dpo-badge-success',
+  en_proceso: 'dpo-badge-neutral',
+  no_autorizado: 'dpo-badge-danger',
 };
 
 function ModuleContent() {
@@ -239,7 +266,7 @@ function ModuleContent() {
     if (!q) return consentimientos;
     return consentimientos.filter((c) => {
       const titularNombre = titularesById.get(c.titularId)?.nombre ?? '';
-      return [c.finalidad, c.canal, c.estado, titularNombre].some((v) => v?.toLowerCase().includes(q));
+      return [c.finalidad, c.tipoArchivo, c.estado, c.estadoDocumento, titularNombre].some((v) => v?.toLowerCase().includes(q));
     });
   }, [consentimientos, query, titularesById]);
 
@@ -324,15 +351,20 @@ function ModuleContent() {
           <div className="dpo-table-wrap">
             <table className="dpo-table">
               <thead>
-                <tr><th>Titular</th><th>Finalidad</th><th>Canal</th><th>Estado</th><th>Fecha</th><th></th></tr>
+                <tr><th>Titular</th><th>Finalidad</th><th>Tipo de archivo</th><th>Estado</th><th>Estado documento</th><th>Fecha</th><th></th></tr>
               </thead>
               <tbody>
                 {consentimientosFiltrados.map((c) => (
                   <tr key={c.id}>
                     <td>{titularesById.get(c.titularId)?.nombre ?? '—'}</td>
                     <td>{c.finalidad}</td>
-                    <td>{c.canal}</td>
+                    <td className="dpo-muted">{TIPOS_ARCHIVO.find((t) => t.value === c.tipoArchivo)?.label ?? '—'}</td>
                     <td><span className={`dpo-badge ${estadoBadge[c.estado] ?? 'dpo-badge-neutral'}`}>{c.estado}</span></td>
+                    <td>
+                      <span className={`dpo-badge ${estadoDocumentoBadge[c.estadoDocumento ?? ''] ?? 'dpo-badge-neutral'}`}>
+                        {ESTADOS_DOCUMENTO.find((e) => e.value === c.estadoDocumento)?.label ?? '—'}
+                      </span>
+                    </td>
                     <td className="dpo-muted">{new Date(c.fechaOtorgamiento).toLocaleDateString()}</td>
                     <td className="dpo-table-actions">
                       {c.evidenciaUrl && (
@@ -422,16 +454,17 @@ function ModuleContent() {
                 </select>
               </div>
               <div className="dpo-field">
-                <label>Canal</label>
-                <select value={nuevoConsentimiento.canal} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, canal: e.target.value })}>
-                  <option value="web">Web</option>
-                  <option value="app">App</option>
-                  <option value="papel">Papel</option>
-                  <option value="telefono">Teléfono</option>
-                  <option value="email">Email</option>
-                  <option value="presencial">Presencial</option>
+                <label>Tipo de archivo</label>
+                <select value={nuevoConsentimiento.tipoArchivo} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, tipoArchivo: e.target.value })}>
+                  {TIPOS_ARCHIVO.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
+            </div>
+            <div className="dpo-field">
+              <label>Estado del documento</label>
+              <select value={nuevoConsentimiento.estadoDocumento} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, estadoDocumento: e.target.value })}>
+                {ESTADOS_DOCUMENTO.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+              </select>
             </div>
             <div className="dpo-field">
               <label>Evidencia (PDF)</label>
