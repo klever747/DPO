@@ -141,6 +141,17 @@
 }
 .dpo-field textarea { min-height: 80px; resize: vertical; }
 .dpo-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.dpo-form-section-title {
+  margin: 10px 0 -4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dpo-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dpo-text-muted);
+}
+.dpo-form-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 
 .dpo-checklist {
   display: grid;

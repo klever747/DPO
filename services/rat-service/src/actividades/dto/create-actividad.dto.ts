@@ -1,5 +1,5 @@
 import { IsArray, IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { EstadoActividad } from '../actividad-tratamiento.entity';
+import { EstadoActividad, RolOrganizacion, VolumenTratamiento } from '../actividad-tratamiento.entity';
 
 export class CreateActividadDto {
   @IsUUID()
@@ -65,4 +65,52 @@ export class CreateActividadDto {
   @IsOptional()
   @IsEnum(EstadoActividad)
   estado?: EstadoActividad;
+
+  @IsOptional()
+  @IsEnum(RolOrganizacion)
+  rolOrganizacion?: RolOrganizacion;
+
+  @IsOptional()
+  @IsString()
+  personaResponsable?: string;
+
+  @IsOptional()
+  @IsString()
+  departamentoPropietario?: string;
+
+  @IsOptional()
+  @IsString()
+  origenDatos?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  tratamientoOcasional?: boolean;
+
+  @IsOptional()
+  @IsString()
+  ambitoGeografico?: string;
+
+  @IsOptional()
+  @IsEnum(VolumenTratamiento)
+  volumenTratamientos?: VolumenTratamiento;
+
+  @IsOptional()
+  @IsString()
+  ejercicioDerechos?: string;
+
+  @IsOptional()
+  @IsString()
+  finalidadCesion?: string;
+
+  @IsOptional()
+  @IsString()
+  sistemaInformacion?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  conservacionPapel?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  almacenamientoLocal?: boolean;
 }
