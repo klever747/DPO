@@ -21,6 +21,7 @@ interface Titular {
 
 interface Consentimiento {
   id: string;
+  empresaId: string;
   titularId: string;
   finalidad: string;
   baseLegal?: string;
@@ -85,7 +86,7 @@ function ModuleContent() {
   const [consentimientos, setConsentimientos] = useState<Consentimiento[] | null>(null);
   const [query, setQuery] = useState('');
   const [titularModal, setTitularModal] = useState<{ mode: 'create' | 'edit'; titular?: Titular } | null>(null);
-  const [showConsentimientoModal, setShowConsentimientoModal] = useState(false);
+  const [consentimientoModal, setConsentimientoModal] = useState<{ mode: 'create' | 'edit'; consentimiento?: Consentimiento } | null>(null);
   const [nuevoTitular, setNuevoTitular] = useState(emptyTitular);
   const [nuevoConsentimiento, setNuevoConsentimiento] = useState(emptyConsentimiento);
   const [evidenciaFile, setEvidenciaFile] = useState<File | null>(null);
@@ -166,7 +167,20 @@ function ModuleContent() {
   function abrirCrearConsentimiento() {
     setNuevoConsentimiento({ ...emptyConsentimiento, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
     setEvidenciaFile(null);
-    setShowConsentimientoModal(true);
+    setConsentimientoModal({ mode: 'create' });
+  }
+
+  function abrirEditarConsentimiento(c: Consentimiento) {
+    setNuevoConsentimiento({
+      titularId: c.titularId,
+      finalidad: c.finalidad,
+      baseLegal: c.baseLegal ?? BASES_LEGALES[0],
+      tipoArchivo: c.tipoArchivo ?? 'digital',
+      estadoDocumento: c.estadoDocumento ?? 'en_proceso',
+      empresaId: c.empresaId,
+    });
+    setEvidenciaFile(null);
+    setConsentimientoModal({ mode: 'edit', consentimiento: c });
   }
 
   async function guardarTitular(e: FormEvent) {
@@ -197,7 +211,7 @@ function ModuleContent() {
     }
   }
 
-  async function crearConsentimiento(e: FormEvent) {
+  async function guardarConsentimiento(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
@@ -206,14 +220,22 @@ function ModuleContent() {
         const res = await apiUpload<{ url: string }>('/consentimientos/evidencia', evidenciaFile);
         evidenciaUrl = res.url;
       }
-      await apiFetch('/consentimientos', {
-        method: 'POST',
-        body: JSON.stringify(omitEmpty({ ...nuevoConsentimiento, evidenciaUrl })),
-      });
-      toast.success('Consentimiento registrado');
+      if (consentimientoModal?.mode === 'edit' && consentimientoModal.consentimiento) {
+        await apiFetch(`/consentimientos/${consentimientoModal.consentimiento.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(omitEmpty({ ...nuevoConsentimiento, evidenciaUrl })),
+        });
+        toast.success('Consentimiento actualizado');
+      } else {
+        await apiFetch('/consentimientos', {
+          method: 'POST',
+          body: JSON.stringify(omitEmpty({ ...nuevoConsentimiento, evidenciaUrl })),
+        });
+        toast.success('Consentimiento registrado');
+      }
       setNuevoConsentimiento(emptyConsentimiento);
       setEvidenciaFile(null);
-      setShowConsentimientoModal(false);
+      setConsentimientoModal(null);
       cargarConsentimientos();
     } catch (err) {
       toast.error((err as Error).message);
@@ -367,9 +389,12 @@ function ModuleContent() {
                     </td>
                     <td className="dpo-muted">{new Date(c.fechaOtorgamiento).toLocaleDateString()}</td>
                     <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarConsentimiento(c)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
                       {c.evidenciaUrl && (
                         <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => verEvidencia(c.evidenciaUrl!)} title="Ver evidencia (PDF)">
-                          <Icon name="clipboard" size={15} />
+                          <Icon name="file-text" size={15} />
                         </button>
                       )}
                       {c.estado === 'otorgado' && (
@@ -423,9 +448,12 @@ function ModuleContent() {
         </Modal>
       )}
 
-      {showConsentimientoModal && (
-        <Modal title="Nuevo consentimiento" onClose={() => setShowConsentimientoModal(false)}>
-          <form className="dpo-form" onSubmit={crearConsentimiento}>
+      {consentimientoModal && (
+        <Modal
+          title={consentimientoModal.mode === 'edit' ? 'Editar consentimiento' : 'Nuevo consentimiento'}
+          onClose={() => setConsentimientoModal(null)}
+        >
+          <form className="dpo-form" onSubmit={guardarConsentimiento}>
             {(empresas?.length ?? 0) > 1 && (
               <div className="dpo-field">
                 <label>Empresa *</label>
@@ -467,7 +495,12 @@ function ModuleContent() {
               </select>
             </div>
             <div className="dpo-field">
-              <label>Evidencia (PDF)</label>
+              <label>
+                {consentimientoModal.mode === 'edit' ? 'Reemplazar evidencia (PDF)' : 'Evidencia (PDF)'}
+                {consentimientoModal.mode === 'edit' && consentimientoModal.consentimiento?.evidenciaUrl && (
+                  <span className="dpo-muted"> — deja vacío para conservar el archivo actual</span>
+                )}
+              </label>
               <input
                 type="file"
                 accept="application/pdf"
@@ -475,8 +508,10 @@ function ModuleContent() {
               />
             </div>
             <div className="dpo-form-actions">
-              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowConsentimientoModal(false)}>Cancelar</button>
-              <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>{saving && <span className="dpo-spinner" />} Registrar</button>
+              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setConsentimientoModal(null)}>Cancelar</button>
+              <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
+                {saving && <span className="dpo-spinner" />} {consentimientoModal.mode === 'edit' ? 'Guardar cambios' : 'Registrar'}
+              </button>
             </div>
           </form>
         </Modal>
