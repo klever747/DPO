@@ -202,10 +202,9 @@ function ModuleContent() {
                   <td><span className="dpo-badge dpo-badge-neutral">{s.tipoDerecho}</span></td>
                   <td>
                     <select
-                      className="dpo-badge-select"
+                      className={`dpo-badge-select ${estadoBadge[s.estado] ?? 'dpo-badge-neutral'}`}
                       value={s.estado}
                       onChange={(e) => cambiarEstado(s.id, e.target.value)}
-                      style={{ border: 'none', background: 'transparent', fontWeight: 600, cursor: 'pointer' }}
                     >
                       {Object.keys(estadoBadge).map((es) => <option key={es} value={es}>{es}</option>)}
                     </select>

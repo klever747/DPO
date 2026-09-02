@@ -190,6 +190,25 @@
 .dpo-badge-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
 .dpo-badge-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
 .dpo-badge-neutral { background: #eef0f6; color: var(--dpo-text-muted); }
+
+.dpo-badge-select {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.dpo-badge-select.dpo-badge-success { background: var(--dpo-success-soft); color: var(--dpo-success); }
+.dpo-badge-select.dpo-badge-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
+.dpo-badge-select.dpo-badge-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
+.dpo-badge-select.dpo-badge-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
+.dpo-badge-select.dpo-badge-neutral { background: #eef0f6; color: var(--dpo-text-muted); }
+.dpo-badge-select option { color: initial; background: #fff; }
 .dpo-badge-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
 
 /* --- Estado vacío / error -------------------------------------------------- */
