@@ -16,6 +16,7 @@ interface Titular {
   nombre: string;
   email?: string;
   documentoIdentidad?: string;
+  empresaIds: string[];
 }
 
 interface Consentimiento {
@@ -27,7 +28,7 @@ interface Consentimiento {
   fechaOtorgamiento: string;
 }
 
-const emptyTitular = { nombre: '', documentoIdentidad: '', email: '', empresaId: '' };
+const emptyTitular = { nombre: '', documentoIdentidad: '', email: '', empresaIds: [] as string[] };
 const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: '', canal: 'web', empresaId: '' };
 
 const estadoBadge: Record<string, string> = {
@@ -87,8 +88,17 @@ function ModuleContent() {
   }, []);
 
   function abrirCrearTitular() {
-    setNuevoTitular({ ...emptyTitular, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setNuevoTitular({ ...emptyTitular, empresaIds: empresas?.length === 1 ? [empresas[0].id] : [] });
     setShowTitularModal(true);
+  }
+
+  function toggleEmpresaEnTitular(empresaId: string) {
+    setNuevoTitular((f) => ({
+      ...f,
+      empresaIds: f.empresaIds.includes(empresaId)
+        ? f.empresaIds.filter((id) => id !== empresaId)
+        : [...f.empresaIds, empresaId],
+    }));
   }
 
   function abrirCrearConsentimiento() {
@@ -98,6 +108,10 @@ function ModuleContent() {
 
   async function crearTitular(e: FormEvent) {
     e.preventDefault();
+    if (nuevoTitular.empresaIds.length === 0) {
+      toast.error('Selecciona al menos una empresa para el titular');
+      return;
+    }
     setSaving(true);
     try {
       await apiFetch('/titulares', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoTitular)) });
@@ -138,6 +152,12 @@ function ModuleContent() {
       toast.error((err as Error).message);
     }
   }
+
+  const empresasById = useMemo(() => {
+    const map = new Map<string, EmpresaRef>();
+    (empresas ?? []).forEach((e) => map.set(e.id, e));
+    return map;
+  }, [empresas]);
 
   const titularesById = useMemo(() => {
     const map = new Map<string, Titular>();
@@ -205,13 +225,16 @@ function ModuleContent() {
         ) : (
           <div className="dpo-table-wrap">
             <table className="dpo-table">
-              <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Empresas</th></tr></thead>
               <tbody>
                 {titularesFiltrados.map((t) => (
                   <tr key={t.id}>
                     <td><strong>{t.nombre}</strong></td>
                     <td>{t.documentoIdentidad || '—'}</td>
                     <td>{t.email || '—'}</td>
+                    <td className="dpo-muted">
+                      {(t.empresaIds ?? []).map((id) => empresasById.get(id)?.nombre ?? id).join(', ') || '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -259,11 +282,15 @@ function ModuleContent() {
           <form className="dpo-form" onSubmit={crearTitular}>
             {(empresas?.length ?? 0) > 1 && (
               <div className="dpo-field">
-                <label>Empresa *</label>
-                <select value={nuevoTitular.empresaId} onChange={(e) => setNuevoTitular({ ...nuevoTitular, empresaId: e.target.value })} required>
-                  <option value="">Selecciona una empresa</option>
-                  {(empresas ?? []).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-                </select>
+                <label>Empresas a las que pertenece *</label>
+                <div className="dpo-checklist">
+                  {(empresas ?? []).map((e) => (
+                    <label key={e.id} className="dpo-checklist-item">
+                      <input type="checkbox" checked={nuevoTitular.empresaIds.includes(e.id)} onChange={() => toggleEmpresaEnTitular(e.id)} />
+                      {e.nombre}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
             <div className="dpo-field">

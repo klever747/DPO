@@ -12,6 +12,7 @@ import {
   buildTypeOrmOptions,
 } from '@dpo/common';
 import { Titular } from './titulares/titular.entity';
+import { TitularEmpresa } from './titulares/titular-empresa.entity';
 import { Consentimiento } from './consentimientos/consentimiento.entity';
 import { TitularesModule } from './titulares/titulares.module';
 import { ConsentimientosModule } from './consentimientos/consentimientos.module';
@@ -20,7 +21,7 @@ import { ConsentimientosModule } from './consentimientos/consentimientos.module'
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register(buildJwtModuleOptions()),
-    TypeOrmModule.forRoot(buildTypeOrmOptions('consent', [Titular, Consentimiento])),
+    TypeOrmModule.forRoot(buildTypeOrmOptions('consent', [Titular, TitularEmpresa, Consentimiento])),
     HealthModule.forRoot('consent-service'),
     TitularesModule,
     ConsentimientosModule,

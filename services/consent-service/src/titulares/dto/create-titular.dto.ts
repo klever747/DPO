@@ -1,8 +1,9 @@
-import { IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
+import { ArrayMinSize, IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateTitularDto {
-  @IsUUID()
-  empresaId: string;
+  @IsUUID('4', { each: true })
+  @ArrayMinSize(1)
+  empresaIds: string[];
 
   @IsString()
   nombre: string;
