@@ -37,6 +37,11 @@ interface Empresa extends EmpresaRef {
   activo: boolean;
 }
 
+interface DepartamentoRef {
+  id: string;
+  nombre: string;
+}
+
 interface Usuario {
   id: string;
   nombre: string;
@@ -46,12 +51,20 @@ interface Usuario {
   activo: boolean;
   modulosPermitidos: string[];
   empresas: EmpresaRef[];
+  departamento?: DepartamentoRef | null;
   ultimoAcceso?: string;
   createdAt: string;
 }
 
 interface Sector {
   id: string;
+  nombre: string;
+  activo: boolean;
+}
+
+interface Departamento {
+  id: string;
+  empresaId: string;
   nombre: string;
   activo: boolean;
 }
@@ -66,15 +79,18 @@ const emptyUsuarioForm = {
   activo: true,
   empresaIds: [] as string[],
   modulosPermitidos: [] as string[],
+  departamentoId: '',
 };
 const emptySectorForm = { nombre: '' };
+const emptyDepartamentoForm = { empresaId: '', nombre: '' };
 
 function ModuleContent() {
   const toast = useToast();
-  const [tab, setTab] = useState<'empresas' | 'usuarios' | 'sectores'>('empresas');
+  const [tab, setTab] = useState<'empresas' | 'usuarios' | 'departamentos' | 'sectores'>('empresas');
   const [empresas, setEmpresas] = useState<Empresa[] | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[] | null>(null);
   const [sectores, setSectores] = useState<Sector[] | null>(null);
+  const [departamentos, setDepartamentos] = useState<Departamento[] | null>(null);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -89,6 +105,10 @@ function ModuleContent() {
   // --- Sectores ---
   const [showSectorModal, setShowSectorModal] = useState<{ mode: 'create' | 'edit'; sector?: Sector } | null>(null);
   const [sectorForm, setSectorForm] = useState(emptySectorForm);
+
+  // --- Departamentos ---
+  const [departamentoModal, setDepartamentoModal] = useState<{ mode: 'create' | 'edit'; departamento?: Departamento } | null>(null);
+  const [departamentoForm, setDepartamentoForm] = useState(emptyDepartamentoForm);
 
   async function cargarEmpresas() {
     try {
@@ -120,12 +140,29 @@ function ModuleContent() {
     }
   }
 
+  async function cargarDepartamentos() {
+    try {
+      const res = await apiFetch<Departamento[]>('/departamentos');
+      setDepartamentos(res);
+    } catch (err) {
+      toast.error(`No se pudieron cargar los departamentos: ${(err as Error).message}`);
+      setDepartamentos([]);
+    }
+  }
+
   useEffect(() => {
     cargarEmpresas();
     cargarUsuarios();
     cargarSectores();
+    cargarDepartamentos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const empresasById = useMemo(() => {
+    const map = new Map<string, Empresa>();
+    (empresas ?? []).forEach((e) => map.set(e.id, e));
+    return map;
+  }, [empresas]);
 
   // ===================== Empresas =====================
 
@@ -197,6 +234,7 @@ function ModuleContent() {
       activo: u.activo,
       empresaIds: u.empresas.map((e) => e.id),
       modulosPermitidos: u.modulosPermitidos ?? [],
+      departamentoId: u.departamento?.id ?? '',
     });
     setUsuarioModal({ mode: 'edit', usuario: u });
   }
@@ -206,12 +244,14 @@ function ModuleContent() {
   }
 
   function toggleEmpresaEnForm(empresaId: string) {
-    setUsuarioForm((f) => ({
-      ...f,
-      empresaIds: f.empresaIds.includes(empresaId)
+    setUsuarioForm((f) => {
+      const empresaIds = f.empresaIds.includes(empresaId)
         ? f.empresaIds.filter((id) => id !== empresaId)
-        : [...f.empresaIds, empresaId],
-    }));
+        : [...f.empresaIds, empresaId];
+      const departamentoActual = (departamentos ?? []).find((d) => d.id === f.departamentoId);
+      const departamentoId = departamentoActual && !empresaIds.includes(departamentoActual.empresaId) ? '' : f.departamentoId;
+      return { ...f, empresaIds, departamentoId };
+    });
   }
 
   function toggleModuloEnForm(moduleKey: string) {
@@ -304,6 +344,56 @@ function ModuleContent() {
     }
   }
 
+  // ===================== Departamentos =====================
+
+  function abrirCrearDepartamento() {
+    setDepartamentoForm({ ...emptyDepartamentoForm, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setDepartamentoModal({ mode: 'create' });
+  }
+
+  function abrirEditarDepartamento(d: Departamento) {
+    setDepartamentoForm({ empresaId: d.empresaId, nombre: d.nombre });
+    setDepartamentoModal({ mode: 'edit', departamento: d });
+  }
+
+  async function guardarDepartamento(e: FormEvent) {
+    e.preventDefault();
+    if (!departamentoForm.empresaId) {
+      toast.error('Selecciona la empresa del departamento');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (departamentoModal?.mode === 'edit' && departamentoModal.departamento) {
+        await apiFetch(`/departamentos/${departamentoModal.departamento.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(departamentoForm),
+        });
+        toast.success('Departamento actualizado');
+      } else {
+        await apiFetch('/departamentos', { method: 'POST', body: JSON.stringify(departamentoForm) });
+        toast.success(`Departamento "${departamentoForm.nombre}" creado`);
+      }
+      setDepartamentoModal(null);
+      cargarDepartamentos();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function eliminarDepartamento(id: string, nombre: string) {
+    if (!confirm(`¿Eliminar el departamento "${nombre}"? Los usuarios asignados quedarán sin departamento.`)) return;
+    try {
+      await apiFetch(`/departamentos/${id}`, { method: 'DELETE' });
+      toast.success('Departamento eliminado');
+      cargarDepartamentos();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
   // ===================== Filtros de búsqueda =====================
 
   const empresasFiltradas = useMemo(() => {
@@ -327,6 +417,13 @@ function ModuleContent() {
     return sectores.filter((s) => s.nombre.toLowerCase().includes(q));
   }, [sectores, query]);
 
+  const departamentosFiltrados = useMemo(() => {
+    if (!departamentos) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return departamentos;
+    return departamentos.filter((d) => [d.nombre, empresasById.get(d.empresaId)?.nombre].some((v) => v?.toLowerCase().includes(q)));
+  }, [departamentos, query, empresasById]);
+
   return (
     <div className="dpo-module">
       <div className="dpo-module-header">
@@ -344,6 +441,11 @@ function ModuleContent() {
             <Icon name="plus" size={16} /> Nuevo usuario
           </button>
         )}
+        {tab === 'departamentos' && (
+          <button className="dpo-btn dpo-btn-primary" onClick={abrirCrearDepartamento}>
+            <Icon name="plus" size={16} /> Nuevo departamento
+          </button>
+        )}
         {tab === 'sectores' && (
           <button className="dpo-btn dpo-btn-primary" onClick={abrirCrearSector}>
             <Icon name="plus" size={16} /> Nuevo sector
@@ -357,6 +459,9 @@ function ModuleContent() {
         </button>
         <button className={tab === 'usuarios' ? 'active' : ''} onClick={() => setTab('usuarios')}>
           <Icon name="users" size={15} /> Usuarios
+        </button>
+        <button className={tab === 'departamentos' ? 'active' : ''} onClick={() => setTab('departamentos')}>
+          <Icon name="inbox" size={15} /> Departamentos
         </button>
         <button className={tab === 'sectores' ? 'active' : ''} onClick={() => setTab('sectores')}>
           <Icon name="archive" size={15} /> Sectores
@@ -439,6 +544,7 @@ function ModuleContent() {
                   <th>Email</th>
                   <th>Rol</th>
                   <th>Empresas</th>
+                  <th>Departamento</th>
                   <th>Módulos</th>
                   <th>Estado</th>
                   <th></th>
@@ -453,6 +559,7 @@ function ModuleContent() {
                     <td className="dpo-muted">
                       {u.rol === 'super_admin' ? 'Todas' : u.empresas.map((e) => e.nombre).join(', ') || '—'}
                     </td>
+                    <td className="dpo-muted">{u.departamento?.nombre ?? '—'}</td>
                     <td className="dpo-muted">
                       {u.rol === 'super_admin' ? 'Todos' : `${u.modulosPermitidos?.length ?? 0} módulo(s)`}
                     </td>
@@ -469,6 +576,42 @@ function ModuleContent() {
                         <Icon name="clipboard" size={15} />
                       </button>
                       <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarUsuario(u.id, u.nombre)} title="Eliminar">
+                        <Icon name="trash" size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+      {tab === 'departamentos' &&
+        (departamentos === null ? (
+          <TableSkeleton />
+        ) : departamentosFiltrados.length === 0 ? (
+          <div className="dpo-empty">
+            <Icon name="inbox" size={32} />
+            <p className="dpo-empty-title">Sin departamentos todavía</p>
+            <p>Crea los departamentos de cada empresa para poder asignarlos a los usuarios.</p>
+          </div>
+        ) : (
+          <div className="dpo-table-wrap">
+            <table className="dpo-table">
+              <thead>
+                <tr><th>Nombre</th><th>Empresa</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                {departamentosFiltrados.map((d) => (
+                  <tr key={d.id}>
+                    <td><strong>{d.nombre}</strong></td>
+                    <td className="dpo-muted">{empresasById.get(d.empresaId)?.nombre ?? '—'}</td>
+                    <td><span className={`dpo-badge ${d.activo ? 'dpo-badge-success' : 'dpo-badge-neutral'}`}>{d.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarDepartamento(d)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarDepartamento(d.id, d.nombre)} title="Eliminar">
                         <Icon name="trash" size={15} />
                       </button>
                     </td>
@@ -584,6 +727,10 @@ function ModuleContent() {
                 <p>{usuarioModal.usuario.rol === 'super_admin' ? 'Todas (super_admin)' : (usuarioModal.usuario.empresas.map((e) => e.nombre).join(', ') || 'Ninguna asignada')}</p>
               </div>
               <div className="dpo-field">
+                <label>Departamento</label>
+                <p>{usuarioModal.usuario.departamento?.nombre ?? 'Sin departamento'}</p>
+              </div>
+              <div className="dpo-field">
                 <label>Módulos permitidos</label>
                 {usuarioModal.usuario.rol === 'super_admin' ? (
                   <p>Todos (super_admin)</p>
@@ -658,6 +805,25 @@ function ModuleContent() {
               </div>
 
               <div className="dpo-field">
+                <label>Departamento</label>
+                <select value={usuarioForm.departamentoId} onChange={(e) => setUsuarioForm({ ...usuarioForm, departamentoId: e.target.value })}>
+                  <option value="">Sin departamento</option>
+                  {(departamentos ?? [])
+                    .filter((d) => usuarioForm.empresaIds.includes(d.empresaId))
+                    .map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre}{usuarioForm.empresaIds.length > 1 ? ` (${empresasById.get(d.empresaId)?.nombre})` : ''}
+                      </option>
+                    ))}
+                </select>
+                {usuarioForm.empresaIds.length === 0 && (
+                  <p className="dpo-muted" style={{ fontSize: '0.78rem', margin: '4px 0 0' }}>
+                    Selecciona primero al menos una empresa para ver sus departamentos.
+                  </p>
+                )}
+              </div>
+
+              <div className="dpo-field">
                 <label>Módulos que puede ver {usuarioForm.rol === 'super_admin' && <span className="dpo-muted">(super_admin ve todos, esta selección es opcional)</span>}</label>
                 <div className="dpo-checklist">
                   {MODULE_CATALOG.map((m) => (
@@ -692,6 +858,31 @@ function ModuleContent() {
               <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowSectorModal(null)}>Cancelar</button>
               <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
                 {saving && <span className="dpo-spinner" />} {showSectorModal.mode === 'edit' ? 'Guardar cambios' : 'Crear sector'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ---------- Modal: crear/editar departamento ---------- */}
+      {departamentoModal && (
+        <Modal title={departamentoModal.mode === 'edit' ? 'Editar departamento' : 'Nuevo departamento'} onClose={() => setDepartamentoModal(null)}>
+          <form className="dpo-form" onSubmit={guardarDepartamento}>
+            <div className="dpo-field">
+              <label>Empresa *</label>
+              <select value={departamentoForm.empresaId} onChange={(e) => setDepartamentoForm({ ...departamentoForm, empresaId: e.target.value })} required>
+                <option value="">Selecciona una empresa</option>
+                {(empresas ?? []).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+              </select>
+            </div>
+            <div className="dpo-field">
+              <label>Nombre *</label>
+              <input value={departamentoForm.nombre} onChange={(e) => setDepartamentoForm({ ...departamentoForm, nombre: e.target.value })} required minLength={2} placeholder="Ej. Recursos Humanos" />
+            </div>
+            <div className="dpo-form-actions">
+              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setDepartamentoModal(null)}>Cancelar</button>
+              <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
+                {saving && <span className="dpo-spinner" />} {departamentoModal.mode === 'edit' ? 'Guardar cambios' : 'Crear departamento'}
               </button>
             </div>
           </form>

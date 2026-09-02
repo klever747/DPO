@@ -15,22 +15,25 @@ import { Empresa } from './empresas/empresa.entity';
 import { Usuario } from './usuarios/usuario.entity';
 import { Sector } from './sectores/sector.entity';
 import { RegistroAcceso } from './registro-accesos/registro-acceso.entity';
+import { Departamento } from './departamentos/departamento.entity';
 import { EmpresasModule } from './empresas/empresas.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { SectoresModule } from './sectores/sectores.module';
 import { RegistroAccesosModule } from './registro-accesos/registro-accesos.module';
+import { DepartamentosModule } from './departamentos/departamentos.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register(buildJwtModuleOptions()),
-    TypeOrmModule.forRoot(buildTypeOrmOptions('auth', [Empresa, Usuario, Sector, RegistroAcceso])),
+    TypeOrmModule.forRoot(buildTypeOrmOptions('auth', [Empresa, Usuario, Sector, RegistroAcceso, Departamento])),
     HealthModule.forRoot('auth-service'),
     EmpresasModule,
     UsuariosModule,
     SectoresModule,
     RegistroAccesosModule,
+    DepartamentosModule,
     AuthModule,
   ],
   providers: [

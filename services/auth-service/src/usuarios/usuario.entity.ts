@@ -2,12 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Empresa } from '../empresas/empresa.entity';
+import { Departamento } from '../departamentos/departamento.entity';
 
 export enum RolUsuario {
   SUPER_ADMIN = 'super_admin',
@@ -35,6 +38,13 @@ export class Usuario {
     inverseJoinColumn: { name: 'empresa_id', referencedColumnName: 'id' },
   })
   empresas: Empresa[];
+
+  @Column({ name: 'departamento_id', type: 'uuid', nullable: true })
+  departamentoId?: string | null;
+
+  @ManyToOne(() => Departamento, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'departamento_id' })
+  departamento?: Departamento | null;
 
   @Column()
   nombre: string;

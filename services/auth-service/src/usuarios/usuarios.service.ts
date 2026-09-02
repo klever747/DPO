@@ -48,6 +48,7 @@ export class UsuariosService {
     const qb = this.usuariosRepo
       .createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.empresas', 'empresa')
+      .leftJoinAndSelect('usuario.departamento', 'departamento')
       .orderBy('usuario.createdAt', 'DESC')
       .skip(query.skip)
       .take(query.limit);
@@ -64,7 +65,7 @@ export class UsuariosService {
   }
 
   async findOne(id: string): Promise<Usuario> {
-    const usuario = await this.usuariosRepo.findOne({ where: { id }, relations: ['empresas'] });
+    const usuario = await this.usuariosRepo.findOne({ where: { id }, relations: ['empresas', 'departamento'] });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
     return usuario;
   }

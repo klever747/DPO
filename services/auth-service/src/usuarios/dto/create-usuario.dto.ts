@@ -8,6 +8,10 @@ export class CreateUsuarioDto {
   @IsUUID('4', { each: true })
   empresaIds?: string[];
 
+  @IsOptional()
+  @IsUUID()
+  departamentoId?: string;
+
   @IsString()
   nombre: string;
 

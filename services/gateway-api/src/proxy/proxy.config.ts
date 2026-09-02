@@ -23,6 +23,7 @@ export function buildServiceRoutes(): ServiceRoute[] {
     { prefix: '/api/usuarios', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/sectores', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/registro-accesos', target: authServiceUrl, service: 'auth-service' },
+    { prefix: '/api/departamentos', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/titulares', target: consentServiceUrl, service: 'consent-service' },
     { prefix: '/api/consentimientos', target: consentServiceUrl, service: 'consent-service' },
     { prefix: '/api/actividades', target: process.env.RAT_SERVICE_URL || 'http://localhost:3003', service: 'rat-service' },
