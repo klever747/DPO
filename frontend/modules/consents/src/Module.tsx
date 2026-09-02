@@ -44,7 +44,7 @@ function ModuleContent() {
   const [titulares, setTitulares] = useState<Titular[] | null>(null);
   const [consentimientos, setConsentimientos] = useState<Consentimiento[] | null>(null);
   const [query, setQuery] = useState('');
-  const [showTitularModal, setShowTitularModal] = useState(false);
+  const [titularModal, setTitularModal] = useState<{ mode: 'create' | 'edit'; titular?: Titular } | null>(null);
   const [showConsentimientoModal, setShowConsentimientoModal] = useState(false);
   const [nuevoTitular, setNuevoTitular] = useState(emptyTitular);
   const [nuevoConsentimiento, setNuevoConsentimiento] = useState(emptyConsentimiento);
@@ -89,7 +89,28 @@ function ModuleContent() {
 
   function abrirCrearTitular() {
     setNuevoTitular({ ...emptyTitular, empresaIds: empresas?.length === 1 ? [empresas[0].id] : [] });
-    setShowTitularModal(true);
+    setTitularModal({ mode: 'create' });
+  }
+
+  function abrirEditarTitular(t: Titular) {
+    setNuevoTitular({
+      nombre: t.nombre,
+      documentoIdentidad: t.documentoIdentidad ?? '',
+      email: t.email ?? '',
+      empresaIds: t.empresaIds ?? [],
+    });
+    setTitularModal({ mode: 'edit', titular: t });
+  }
+
+  async function eliminarTitular(id: string, nombre: string) {
+    if (!confirm(`¿Eliminar al titular "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await apiFetch(`/titulares/${id}`, { method: 'DELETE' });
+      toast.success('Titular eliminado');
+      cargarTitulares();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   function toggleEmpresaEnTitular(empresaId: string) {
@@ -106,7 +127,7 @@ function ModuleContent() {
     setShowConsentimientoModal(true);
   }
 
-  async function crearTitular(e: FormEvent) {
+  async function guardarTitular(e: FormEvent) {
     e.preventDefault();
     if (nuevoTitular.empresaIds.length === 0) {
       toast.error('Selecciona al menos una empresa para el titular');
@@ -114,10 +135,18 @@ function ModuleContent() {
     }
     setSaving(true);
     try {
-      await apiFetch('/titulares', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoTitular)) });
-      toast.success('Titular registrado');
+      if (titularModal?.mode === 'edit' && titularModal.titular) {
+        await apiFetch(`/titulares/${titularModal.titular.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(omitEmpty(nuevoTitular)),
+        });
+        toast.success('Titular actualizado');
+      } else {
+        await apiFetch('/titulares', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoTitular)) });
+        toast.success('Titular registrado');
+      }
       setNuevoTitular(emptyTitular);
-      setShowTitularModal(false);
+      setTitularModal(null);
       cargarTitulares();
     } catch (err) {
       toast.error((err as Error).message);
@@ -225,7 +254,7 @@ function ModuleContent() {
         ) : (
           <div className="dpo-table-wrap">
             <table className="dpo-table">
-              <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Empresas</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Empresas</th><th></th></tr></thead>
               <tbody>
                 {titularesFiltrados.map((t) => (
                   <tr key={t.id}>
@@ -234,6 +263,14 @@ function ModuleContent() {
                     <td>{t.email || '—'}</td>
                     <td className="dpo-muted">
                       {(t.empresaIds ?? []).map((id) => empresasById.get(id)?.nombre ?? id).join(', ') || '—'}
+                    </td>
+                    <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarTitular(t)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarTitular(t.id, t.nombre)} title="Eliminar">
+                        <Icon name="trash" size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -277,9 +314,9 @@ function ModuleContent() {
           </div>
         ))}
 
-      {showTitularModal && (
-        <Modal title="Nuevo titular" onClose={() => setShowTitularModal(false)}>
-          <form className="dpo-form" onSubmit={crearTitular}>
+      {titularModal && (
+        <Modal title={titularModal.mode === 'edit' ? 'Editar titular' : 'Nuevo titular'} onClose={() => setTitularModal(null)}>
+          <form className="dpo-form" onSubmit={guardarTitular}>
             {(empresas?.length ?? 0) > 1 && (
               <div className="dpo-field">
                 <label>Empresas a las que pertenece *</label>
@@ -308,8 +345,10 @@ function ModuleContent() {
               </div>
             </div>
             <div className="dpo-form-actions">
-              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowTitularModal(false)}>Cancelar</button>
-              <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>{saving && <span className="dpo-spinner" />} Registrar</button>
+              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setTitularModal(null)}>Cancelar</button>
+              <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
+                {saving && <span className="dpo-spinner" />} {titularModal.mode === 'edit' ? 'Guardar cambios' : 'Registrar'}
+              </button>
             </div>
           </form>
         </Modal>
