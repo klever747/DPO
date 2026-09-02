@@ -79,7 +79,7 @@ function ModuleContent() {
   const [saving, setSaving] = useState(false);
 
   // --- Empresas ---
-  const [showEmpresaModal, setShowEmpresaModal] = useState(false);
+  const [empresaModal, setEmpresaModal] = useState<{ mode: 'create' | 'edit'; empresa?: Empresa } | null>(null);
   const [nuevaEmpresa, setNuevaEmpresa] = useState(emptyEmpresaForm);
 
   // --- Usuarios ---
@@ -129,14 +129,38 @@ function ModuleContent() {
 
   // ===================== Empresas =====================
 
-  async function crearEmpresa(e: FormEvent) {
+  function abrirCrearEmpresa() {
+    setNuevaEmpresa(emptyEmpresaForm);
+    setEmpresaModal({ mode: 'create' });
+  }
+
+  function abrirEditarEmpresa(e: Empresa) {
+    setNuevaEmpresa({
+      nombre: e.nombre,
+      nif: e.nif ?? '',
+      sector: e.sector ?? '',
+      pais: e.pais ?? '',
+      dpoEmail: e.dpoEmail ?? '',
+    });
+    setEmpresaModal({ mode: 'edit', empresa: e });
+  }
+
+  async function guardarEmpresa(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiFetch('/empresas', { method: 'POST', body: JSON.stringify(omitEmpty(nuevaEmpresa)) });
-      toast.success(`Empresa "${nuevaEmpresa.nombre}" creada correctamente`);
+      if (empresaModal?.mode === 'edit' && empresaModal.empresa) {
+        await apiFetch(`/empresas/${empresaModal.empresa.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(omitEmpty(nuevaEmpresa)),
+        });
+        toast.success('Empresa actualizada correctamente');
+      } else {
+        await apiFetch('/empresas', { method: 'POST', body: JSON.stringify(omitEmpty(nuevaEmpresa)) });
+        toast.success(`Empresa "${nuevaEmpresa.nombre}" creada correctamente`);
+      }
       setNuevaEmpresa(emptyEmpresaForm);
-      setShowEmpresaModal(false);
+      setEmpresaModal(null);
       cargarEmpresas();
     } catch (err) {
       toast.error((err as Error).message);
@@ -311,7 +335,7 @@ function ModuleContent() {
           <p className="dpo-module-subtitle">Administra organizaciones, cuentas de acceso y el catálogo de sectores.</p>
         </div>
         {tab === 'empresas' && (
-          <button className="dpo-btn dpo-btn-primary" onClick={() => setShowEmpresaModal(true)}>
+          <button className="dpo-btn dpo-btn-primary" onClick={abrirCrearEmpresa}>
             <Icon name="plus" size={16} /> Nueva empresa
           </button>
         )}
@@ -383,6 +407,9 @@ function ModuleContent() {
                       </span>
                     </td>
                     <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarEmpresa(e)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
                       <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarEmpresa(e.id, e.nombre)} title="Eliminar">
                         <Icon name="trash" size={15} />
                       </button>
@@ -487,10 +514,10 @@ function ModuleContent() {
           </div>
         ))}
 
-      {/* ---------- Modal: crear empresa ---------- */}
-      {showEmpresaModal && (
-        <Modal title="Nueva empresa" onClose={() => setShowEmpresaModal(false)}>
-          <form className="dpo-form" onSubmit={crearEmpresa}>
+      {/* ---------- Modal: crear/editar empresa ---------- */}
+      {empresaModal && (
+        <Modal title={empresaModal.mode === 'edit' ? 'Editar empresa' : 'Nueva empresa'} onClose={() => setEmpresaModal(null)}>
+          <form className="dpo-form" onSubmit={guardarEmpresa}>
             <div className="dpo-field">
               <label>Nombre *</label>
               <input value={nuevaEmpresa.nombre} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, nombre: e.target.value })} required />
@@ -524,9 +551,9 @@ function ModuleContent() {
               ¿No está el sector que necesitas? Ve a la pestaña "Sectores" para crearlo.
             </p>
             <div className="dpo-form-actions">
-              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowEmpresaModal(false)}>Cancelar</button>
+              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setEmpresaModal(null)}>Cancelar</button>
               <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
-                {saving && <span className="dpo-spinner" />} Crear empresa
+                {saving && <span className="dpo-spinner" />} {empresaModal.mode === 'edit' ? 'Guardar cambios' : 'Crear empresa'}
               </button>
             </div>
           </form>
