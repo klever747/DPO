@@ -6,10 +6,16 @@ import { TableSkeleton } from './ui/Skeleton';
 import { ToastProvider, useToast } from './ui/Toast';
 import './styles.css';
 
+interface EmpresaRef {
+  id: string;
+  nombre: string;
+}
+
 interface Titular {
   id: string;
   nombre: string;
   email?: string;
+  documentoIdentidad?: string;
 }
 
 interface Consentimiento {
@@ -21,18 +27,8 @@ interface Consentimiento {
   fechaOtorgamiento: string;
 }
 
-function getEmpresaIdFromToken(): string | null {
-  const token = localStorage.getItem('dpo_token');
-  if (!token) return null;
-  try {
-    return JSON.parse(atob(token.split('.')[1])).empresaId ?? null;
-  } catch {
-    return null;
-  }
-}
-
-const emptyTitular = { nombre: '', email: '' };
-const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: '', canal: 'web' };
+const emptyTitular = { nombre: '', documentoIdentidad: '', email: '', empresaId: '' };
+const emptyConsentimiento = { titularId: '', finalidad: '', baseLegal: '', canal: 'web', empresaId: '' };
 
 const estadoBadge: Record<string, string> = {
   otorgado: 'dpo-badge-success',
@@ -43,6 +39,7 @@ const estadoBadge: Record<string, string> = {
 function ModuleContent() {
   const toast = useToast();
   const [tab, setTab] = useState<'titulares' | 'consentimientos'>('consentimientos');
+  const [empresas, setEmpresas] = useState<EmpresaRef[] | null>(null);
   const [titulares, setTitulares] = useState<Titular[] | null>(null);
   const [consentimientos, setConsentimientos] = useState<Consentimiento[] | null>(null);
   const [query, setQuery] = useState('');
@@ -51,6 +48,16 @@ function ModuleContent() {
   const [nuevoTitular, setNuevoTitular] = useState(emptyTitular);
   const [nuevoConsentimiento, setNuevoConsentimiento] = useState(emptyConsentimiento);
   const [saving, setSaving] = useState(false);
+
+  async function cargarEmpresas() {
+    try {
+      const res = await apiFetch<{ data: EmpresaRef[] }>('/empresas');
+      setEmpresas(res.data);
+    } catch (err) {
+      toast.error(`No se pudieron cargar las empresas: ${(err as Error).message}`);
+      setEmpresas([]);
+    }
+  }
 
   async function cargarTitulares() {
     try {
@@ -73,17 +80,27 @@ function ModuleContent() {
   }
 
   useEffect(() => {
+    cargarEmpresas();
     cargarTitulares();
     cargarConsentimientos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function abrirCrearTitular() {
+    setNuevoTitular({ ...emptyTitular, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setShowTitularModal(true);
+  }
+
+  function abrirCrearConsentimiento() {
+    setNuevoConsentimiento({ ...emptyConsentimiento, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setShowConsentimientoModal(true);
+  }
+
   async function crearTitular(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      const empresaId = getEmpresaIdFromToken();
-      await apiFetch('/titulares', { method: 'POST', body: JSON.stringify(omitEmpty({ ...nuevoTitular, empresaId })) });
+      await apiFetch('/titulares', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoTitular)) });
       toast.success('Titular registrado');
       setNuevoTitular(emptyTitular);
       setShowTitularModal(false);
@@ -99,8 +116,7 @@ function ModuleContent() {
     e.preventDefault();
     setSaving(true);
     try {
-      const empresaId = getEmpresaIdFromToken();
-      await apiFetch('/consentimientos', { method: 'POST', body: JSON.stringify(omitEmpty({ ...nuevoConsentimiento, empresaId })) });
+      await apiFetch('/consentimientos', { method: 'POST', body: JSON.stringify(omitEmpty(nuevoConsentimiento)) });
       toast.success('Consentimiento registrado');
       setNuevoConsentimiento(emptyConsentimiento);
       setShowConsentimientoModal(false);
@@ -155,7 +171,7 @@ function ModuleContent() {
         </div>
         <button
           className="dpo-btn dpo-btn-primary"
-          onClick={() => (tab === 'titulares' ? setShowTitularModal(true) : setShowConsentimientoModal(true))}
+          onClick={() => (tab === 'titulares' ? abrirCrearTitular() : abrirCrearConsentimiento())}
         >
           <Icon name="plus" size={16} /> {tab === 'titulares' ? 'Nuevo titular' : 'Nuevo consentimiento'}
         </button>
@@ -189,10 +205,14 @@ function ModuleContent() {
         ) : (
           <div className="dpo-table-wrap">
             <table className="dpo-table">
-              <thead><tr><th>Nombre</th><th>Email</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th></tr></thead>
               <tbody>
                 {titularesFiltrados.map((t) => (
-                  <tr key={t.id}><td><strong>{t.nombre}</strong></td><td>{t.email || '—'}</td></tr>
+                  <tr key={t.id}>
+                    <td><strong>{t.nombre}</strong></td>
+                    <td>{t.documentoIdentidad || '—'}</td>
+                    <td>{t.email || '—'}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -237,13 +257,28 @@ function ModuleContent() {
       {showTitularModal && (
         <Modal title="Nuevo titular" onClose={() => setShowTitularModal(false)}>
           <form className="dpo-form" onSubmit={crearTitular}>
+            {(empresas?.length ?? 0) > 1 && (
+              <div className="dpo-field">
+                <label>Empresa *</label>
+                <select value={nuevoTitular.empresaId} onChange={(e) => setNuevoTitular({ ...nuevoTitular, empresaId: e.target.value })} required>
+                  <option value="">Selecciona una empresa</option>
+                  {(empresas ?? []).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+            )}
             <div className="dpo-field">
-              <label>Nombre *</label>
+              <label>Nombres *</label>
               <input value={nuevoTitular.nombre} onChange={(e) => setNuevoTitular({ ...nuevoTitular, nombre: e.target.value })} required />
             </div>
-            <div className="dpo-field">
-              <label>Email</label>
-              <input type="email" value={nuevoTitular.email} onChange={(e) => setNuevoTitular({ ...nuevoTitular, email: e.target.value })} />
+            <div className="dpo-form-row">
+              <div className="dpo-field">
+                <label>Cédula</label>
+                <input value={nuevoTitular.documentoIdentidad} onChange={(e) => setNuevoTitular({ ...nuevoTitular, documentoIdentidad: e.target.value })} />
+              </div>
+              <div className="dpo-field">
+                <label>Correo</label>
+                <input type="email" value={nuevoTitular.email} onChange={(e) => setNuevoTitular({ ...nuevoTitular, email: e.target.value })} />
+              </div>
             </div>
             <div className="dpo-form-actions">
               <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowTitularModal(false)}>Cancelar</button>
@@ -256,6 +291,15 @@ function ModuleContent() {
       {showConsentimientoModal && (
         <Modal title="Nuevo consentimiento" onClose={() => setShowConsentimientoModal(false)}>
           <form className="dpo-form" onSubmit={crearConsentimiento}>
+            {(empresas?.length ?? 0) > 1 && (
+              <div className="dpo-field">
+                <label>Empresa *</label>
+                <select value={nuevoConsentimiento.empresaId} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, empresaId: e.target.value })} required>
+                  <option value="">Selecciona una empresa</option>
+                  {(empresas ?? []).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+            )}
             <div className="dpo-field">
               <label>Titular *</label>
               <select value={nuevoConsentimiento.titularId} onChange={(e) => setNuevoConsentimiento({ ...nuevoConsentimiento, titularId: e.target.value })} required>
