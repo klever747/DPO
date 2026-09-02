@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { JwtPayload } from '@dpo/common';
+import { JwtPayload, MODULE_KEYS } from '@dpo/common';
 import { UsuariosService } from '../usuarios/usuarios.service';
-import { RolUsuario } from '../usuarios/usuario.entity';
+import { RolUsuario, Usuario } from '../usuarios/usuario.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -15,11 +15,15 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const esAdminEmpresa = !!dto.empresaIds?.length;
     const usuario = await this.usuariosService.create({
       ...dto,
-      rol: dto.empresaId ? RolUsuario.ADMIN_EMPRESA : RolUsuario.SUPER_ADMIN,
+      rol: esAdminEmpresa ? RolUsuario.ADMIN_EMPRESA : RolUsuario.SUPER_ADMIN,
+      // El primer usuario de una empresa (o el super_admin fundador) arranca
+      // con acceso a todos los módulos; se puede ajustar después.
+      modulosPermitidos: MODULE_KEYS,
     });
-    return this.buildAuthResponse(usuario.id, usuario.email, usuario.rol, usuario.empresaId ?? null);
+    return this.buildAuthResponse(usuario);
   }
 
   async login(dto: LoginDto) {
@@ -34,11 +38,17 @@ export class AuthService {
     }
 
     await this.usuariosService.marcarUltimoAcceso(usuario.id);
-    return this.buildAuthResponse(usuario.id, usuario.email, usuario.rol, usuario.empresaId ?? null);
+    return this.buildAuthResponse(usuario);
   }
 
-  private buildAuthResponse(sub: string, email: string, rol: string, empresaId: string | null) {
-    const payload: JwtPayload = { sub, email, rol, empresaId };
+  private buildAuthResponse(usuario: Usuario) {
+    const payload: JwtPayload = {
+      sub: usuario.id,
+      email: usuario.email,
+      rol: usuario.rol,
+      empresaIds: (usuario.empresas ?? []).map((e) => e.id),
+      modulosPermitidos: usuario.modulosPermitidos ?? [],
+    };
     return {
       accessToken: this.jwtService.sign(payload),
       user: payload,

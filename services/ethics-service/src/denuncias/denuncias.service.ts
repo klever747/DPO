@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PaginationQueryDto } from '@dpo/common';
 import { Denuncia, EstadoDenuncia } from './denuncia.entity';
 import { CreateDenunciaDto } from './dto/create-denuncia.dto';
@@ -21,9 +21,12 @@ export class DenunciasService {
     );
   }
 
-  async findAll(query: PaginationQueryDto, empresaId?: string) {
+  async findAll(query: PaginationQueryDto, empresaIds?: string[]) {
+    if (empresaIds && empresaIds.length === 0) {
+      return { data: [], total: 0, page: query.page, limit: query.limit };
+    }
     const [data, total] = await this.repo.findAndCount({
-      where: empresaId ? { empresaId } : {},
+      where: empresaIds ? { empresaId: In(empresaIds) } : {},
       skip: query.skip,
       take: query.limit,
       order: { fechaRecepcion: 'DESC' },

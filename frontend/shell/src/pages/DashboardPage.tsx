@@ -12,9 +12,10 @@ interface ServiceStatus {
 }
 
 export function DashboardPage() {
-  const { user } = useAuth();
+  const { user, canAccessModule } = useAuth();
   const [services, setServices] = useState<ServiceStatus[] | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const visibleModules = modules.filter((m) => canAccessModule(m.key));
 
   useEffect(() => {
     const statusUrl = `${API_BASE_URL.replace(/\/api$/, '')}/status`;
@@ -39,7 +40,7 @@ export function DashboardPage() {
         <div className="stat-card">
           <div className="stat-icon stat-icon-primary"><Icon name="dashboard" size={20} /></div>
           <div>
-            <div className="stat-value">{modules.length}</div>
+            <div className="stat-value">{visibleModules.length}</div>
             <div className="stat-label">Módulos disponibles</div>
           </div>
         </div>
@@ -84,7 +85,7 @@ export function DashboardPage() {
         <section className="dpo-card dpo-card-body">
           <h3>Accesos rápidos</h3>
           <div className="quick-links">
-            {modules.map((m) => (
+            {visibleModules.map((m) => (
               <NavLink key={m.path} to={m.path} className="quick-link">
                 <Icon name={m.icon} size={17} />
                 <span>{m.label}</span>

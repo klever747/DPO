@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { Roles } from '@dpo/common';
+import { RequireModule, Roles } from '@dpo/common';
 import { ParticipantesService } from './participantes.service';
 import { CreateParticipanteDto } from './dto/create-participante.dto';
 import { UpdateParticipanteDto } from './dto/update-participante.dto';
 
+@RequireModule('formacion')
 @Controller('formaciones/:formacionId/participantes')
 export class ParticipantesController {
   constructor(private readonly service: ParticipantesService) {}

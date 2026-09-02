@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { CurrentUser, JwtPayload, PaginationQueryDto, Roles } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { EvaluacionesService } from './evaluaciones.service';
 import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
 import { UpdateEvaluacionDto } from './dto/update-evaluacion.dto';
 
+@RequireModule('madurez')
 @Controller('evaluaciones-madurez')
 export class EvaluacionesController {
   constructor(private readonly service: EvaluacionesService) {}
@@ -16,8 +17,8 @@ export class EvaluacionesController {
 
   @Get()
   findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
-    const empresaId = user.rol === 'super_admin' ? undefined : user.empresaId ?? undefined;
-    return this.service.findAll(query, empresaId);
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.service.findAll(query, empresaIds);
   }
 
   @Get(':id')

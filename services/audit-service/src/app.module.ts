@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   HealthModule,
+  ModulePermissionGuard,
   JwtAuthGuard,
   RolesGuard,
   buildJwtModuleOptions,
@@ -25,6 +26,7 @@ import { AuditoriasModule } from './auditorias/auditorias.module';
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: ModulePermissionGuard },
   ],
 })
 export class AppModule {}

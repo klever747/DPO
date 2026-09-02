@@ -4,8 +4,9 @@ import { useAuth } from '../auth/AuthContext';
 import { Icon } from '../ui/Icon';
 
 export function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, canAccessModule } = useAuth();
   const initials = (user?.email ?? '?').slice(0, 2).toUpperCase();
+  const visibleModules = modules.filter((m) => canAccessModule(m.key));
 
   return (
     <div className="layout">
@@ -18,7 +19,7 @@ export function Layout() {
           <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
             <Icon name="dashboard" size={17} /> Panel general
           </NavLink>
-          {modules.map((m) => (
+          {visibleModules.map((m) => (
             <NavLink key={m.path} to={m.path} className={({ isActive }) => (isActive ? 'active' : '')}>
               <Icon name={m.icon} size={17} /> {m.label}
             </NavLink>

@@ -142,6 +142,20 @@
 .dpo-field textarea { min-height: 80px; resize: vertical; }
 .dpo-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 
+.dpo-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--dpo-border);
+  border-radius: var(--dpo-radius-sm);
+  background: #fafafe;
+}
+.dpo-checklist-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+.dpo-checklist-item input { width: auto; }
+
 /* --- Tablas ---------------------------------------------------------------- */
 .dpo-table-wrap { overflow-x: auto; border-radius: var(--dpo-radius-md); border: 1px solid var(--dpo-border); }
 .dpo-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.87rem; }

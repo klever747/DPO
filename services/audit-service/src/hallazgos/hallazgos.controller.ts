@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { Roles } from '@dpo/common';
+import { RequireModule, Roles } from '@dpo/common';
 import { HallazgosService } from './hallazgos.service';
 import { CreateHallazgoDto } from './dto/create-hallazgo.dto';
 import { UpdateHallazgoDto } from './dto/update-hallazgo.dto';
 
+@RequireModule('auditoria')
 @Controller('auditorias/:auditoriaId/hallazgos')
 export class HallazgosController {
   constructor(private readonly service: HallazgosService) {}

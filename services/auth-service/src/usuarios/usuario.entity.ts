@@ -2,8 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
+  JoinTable,
+  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -23,12 +23,18 @@ export class Usuario {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'empresa_id', type: 'uuid', nullable: true })
-  empresaId?: string | null;
-
-  @ManyToOne(() => Empresa, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'empresa_id' })
-  empresa?: Empresa;
+  /**
+   * Un usuario puede pertenecer a varias empresas (relación muchos-a-muchos,
+   * tabla puente auth.usuario_empresas). super_admin no necesita ninguna
+   * asignación: tiene acceso implícito a todas.
+   */
+  @ManyToMany(() => Empresa)
+  @JoinTable({
+    name: 'usuario_empresas',
+    joinColumn: { name: 'usuario_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'empresa_id', referencedColumnName: 'id' },
+  })
+  empresas: Empresa[];
 
   @Column()
   nombre: string;
@@ -44,6 +50,10 @@ export class Usuario {
 
   @Column({ type: 'enum', enum: RolUsuario, enumName: 'rol_usuario', default: RolUsuario.EMPLEADO })
   rol: RolUsuario;
+
+  /** Claves de módulo (ver @dpo/common MODULE_CATALOG) que el usuario puede ver/usar. */
+  @Column({ name: 'modulos_permitidos', type: 'text', array: true, default: () => "'{}'" })
+  modulosPermitidos: string[];
 
   @Column({ default: true })
   activo: boolean;

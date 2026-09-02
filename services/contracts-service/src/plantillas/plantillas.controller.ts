@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { CurrentUser, JwtPayload, PaginationQueryDto, Roles } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { PlantillasService } from './plantillas.service';
 import { CreatePlantillaDto } from './dto/create-plantilla.dto';
 import { UpdatePlantillaDto } from './dto/update-plantilla.dto';
 
+@RequireModule('contratos')
 @Controller('plantillas-contrato')
 export class PlantillasController {
   constructor(private readonly service: PlantillasService) {}
@@ -16,8 +17,8 @@ export class PlantillasController {
 
   @Get()
   findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
-    const empresaId = user.rol === 'super_admin' ? undefined : user.empresaId ?? undefined;
-    return this.service.findAll(query, empresaId);
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.service.findAll(query, empresaIds);
   }
 
   @Get(':id')

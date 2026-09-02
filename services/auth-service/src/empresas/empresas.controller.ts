@@ -8,11 +8,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { PaginationQueryDto, Roles } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { EmpresasService } from './empresas.service';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 
+@RequireModule('empresas-usuarios')
 @Controller('empresas')
 export class EmpresasController {
   constructor(private readonly empresasService: EmpresasService) {}
@@ -24,8 +25,9 @@ export class EmpresasController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.empresasService.findAll(query);
+  findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.empresasService.findAll(query, empresaIds);
   }
 
   @Get(':id')

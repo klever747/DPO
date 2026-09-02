@@ -6,9 +6,30 @@ import { TableSkeleton } from './ui/Skeleton';
 import { ToastProvider, useToast } from './ui/Toast';
 import './styles.css';
 
-interface Empresa {
+/** Debe coincidir con MODULE_CATALOG de @dpo/common (backend). */
+const MODULE_CATALOG = [
+  { key: 'empresas-usuarios', label: 'Empresas y Usuarios' },
+  { key: 'consentimientos', label: 'Consentimientos' },
+  { key: 'rat', label: 'Registro de Actividades (RAT)' },
+  { key: 'arco', label: 'Derechos ARCO' },
+  { key: 'brechas', label: 'Brechas de Seguridad' },
+  { key: 'retencion', label: 'Plazos de Retención' },
+  { key: 'canal-etico', label: 'Canal Ético' },
+  { key: 'madurez', label: 'Madurez' },
+  { key: 'formacion', label: 'Formación' },
+  { key: 'contratos', label: 'Plantillas de Contratos' },
+  { key: 'auditoria', label: 'Auditoría' },
+  { key: 'evidencias', label: 'Evidencias' },
+];
+
+const ROLES = ['super_admin', 'admin_empresa', 'dpo', 'gestor', 'auditor', 'empleado'];
+
+interface EmpresaRef {
   id: string;
   nombre: string;
+}
+
+interface Empresa extends EmpresaRef {
   nif?: string;
   sector?: string;
   pais?: string;
@@ -22,24 +43,52 @@ interface Usuario {
   apellidos?: string;
   email: string;
   rol: string;
-  empresaId?: string;
+  activo: boolean;
+  modulosPermitidos: string[];
+  empresas: EmpresaRef[];
+  ultimoAcceso?: string;
+  createdAt: string;
+}
+
+interface Sector {
+  id: string;
+  nombre: string;
   activo: boolean;
 }
 
-const emptyEmpresa = { nombre: '', nif: '', sector: '', pais: '', dpoEmail: '' };
-const emptyUsuario = { nombre: '', email: '', password: '', empresaId: '' };
+const emptyEmpresaForm = { nombre: '', nif: '', sector: '', pais: '', dpoEmail: '' };
+const emptyUsuarioForm = {
+  nombre: '',
+  apellidos: '',
+  email: '',
+  password: '',
+  rol: 'empleado',
+  activo: true,
+  empresaIds: [] as string[],
+  modulosPermitidos: [] as string[],
+};
+const emptySectorForm = { nombre: '' };
 
 function ModuleContent() {
   const toast = useToast();
-  const [tab, setTab] = useState<'empresas' | 'usuarios'>('empresas');
+  const [tab, setTab] = useState<'empresas' | 'usuarios' | 'sectores'>('empresas');
   const [empresas, setEmpresas] = useState<Empresa[] | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[] | null>(null);
+  const [sectores, setSectores] = useState<Sector[] | null>(null);
   const [query, setQuery] = useState('');
-  const [showEmpresaModal, setShowEmpresaModal] = useState(false);
-  const [showUsuarioModal, setShowUsuarioModal] = useState(false);
-  const [nuevaEmpresa, setNuevaEmpresa] = useState(emptyEmpresa);
-  const [nuevoUsuario, setNuevoUsuario] = useState(emptyUsuario);
   const [saving, setSaving] = useState(false);
+
+  // --- Empresas ---
+  const [showEmpresaModal, setShowEmpresaModal] = useState(false);
+  const [nuevaEmpresa, setNuevaEmpresa] = useState(emptyEmpresaForm);
+
+  // --- Usuarios ---
+  const [usuarioModal, setUsuarioModal] = useState<{ mode: 'create' | 'edit' | 'view'; usuario?: Usuario } | null>(null);
+  const [usuarioForm, setUsuarioForm] = useState(emptyUsuarioForm);
+
+  // --- Sectores ---
+  const [showSectorModal, setShowSectorModal] = useState<{ mode: 'create' | 'edit'; sector?: Sector } | null>(null);
+  const [sectorForm, setSectorForm] = useState(emptySectorForm);
 
   async function cargarEmpresas() {
     try {
@@ -61,11 +110,24 @@ function ModuleContent() {
     }
   }
 
+  async function cargarSectores() {
+    try {
+      const res = await apiFetch<Sector[]>('/sectores');
+      setSectores(res);
+    } catch (err) {
+      toast.error(`No se pudieron cargar los sectores: ${(err as Error).message}`);
+      setSectores([]);
+    }
+  }
+
   useEffect(() => {
     cargarEmpresas();
     cargarUsuarios();
+    cargarSectores();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ===================== Empresas =====================
 
   async function crearEmpresa(e: FormEvent) {
     e.preventDefault();
@@ -73,28 +135,9 @@ function ModuleContent() {
     try {
       await apiFetch('/empresas', { method: 'POST', body: JSON.stringify(omitEmpty(nuevaEmpresa)) });
       toast.success(`Empresa "${nuevaEmpresa.nombre}" creada correctamente`);
-      setNuevaEmpresa(emptyEmpresa);
+      setNuevaEmpresa(emptyEmpresaForm);
       setShowEmpresaModal(false);
       cargarEmpresas();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function crearUsuario(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await apiFetch('/usuarios', {
-        method: 'POST',
-        body: JSON.stringify(omitEmpty({ ...nuevoUsuario, empresaId: nuevoUsuario.empresaId || undefined })),
-      });
-      toast.success(`Usuario "${nuevoUsuario.nombre}" creado correctamente`);
-      setNuevoUsuario(emptyUsuario);
-      setShowUsuarioModal(false);
-      cargarUsuarios();
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -113,6 +156,73 @@ function ModuleContent() {
     }
   }
 
+  // ===================== Usuarios =====================
+
+  function abrirCrearUsuario() {
+    setUsuarioForm(emptyUsuarioForm);
+    setUsuarioModal({ mode: 'create' });
+  }
+
+  function abrirEditarUsuario(u: Usuario) {
+    setUsuarioForm({
+      nombre: u.nombre,
+      apellidos: u.apellidos ?? '',
+      email: u.email,
+      password: '',
+      rol: u.rol,
+      activo: u.activo,
+      empresaIds: u.empresas.map((e) => e.id),
+      modulosPermitidos: u.modulosPermitidos ?? [],
+    });
+    setUsuarioModal({ mode: 'edit', usuario: u });
+  }
+
+  function abrirVerUsuario(u: Usuario) {
+    setUsuarioModal({ mode: 'view', usuario: u });
+  }
+
+  function toggleEmpresaEnForm(empresaId: string) {
+    setUsuarioForm((f) => ({
+      ...f,
+      empresaIds: f.empresaIds.includes(empresaId)
+        ? f.empresaIds.filter((id) => id !== empresaId)
+        : [...f.empresaIds, empresaId],
+    }));
+  }
+
+  function toggleModuloEnForm(moduleKey: string) {
+    setUsuarioForm((f) => ({
+      ...f,
+      modulosPermitidos: f.modulosPermitidos.includes(moduleKey)
+        ? f.modulosPermitidos.filter((k) => k !== moduleKey)
+        : [...f.modulosPermitidos, moduleKey],
+    }));
+  }
+
+  async function guardarUsuario(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (usuarioModal?.mode === 'edit' && usuarioModal.usuario) {
+        const { password, ...rest } = usuarioForm;
+        await apiFetch(`/usuarios/${usuarioModal.usuario.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(omitEmpty({ ...rest, password: password || undefined })),
+        });
+        toast.success('Usuario actualizado correctamente');
+      } else {
+        await apiFetch('/usuarios', { method: 'POST', body: JSON.stringify(omitEmpty(usuarioForm)) });
+        toast.success(`Usuario "${usuarioForm.nombre}" creado correctamente`);
+      }
+      setUsuarioModal(null);
+      cargarUsuarios();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function eliminarUsuario(id: string, nombre: string) {
     if (!confirm(`¿Eliminar al usuario "${nombre}"?`)) return;
     try {
@@ -123,6 +233,54 @@ function ModuleContent() {
       toast.error((err as Error).message);
     }
   }
+
+  // ===================== Sectores =====================
+
+  function abrirCrearSector() {
+    setSectorForm(emptySectorForm);
+    setShowSectorModal({ mode: 'create' });
+  }
+
+  function abrirEditarSector(s: Sector) {
+    setSectorForm({ nombre: s.nombre });
+    setShowSectorModal({ mode: 'edit', sector: s });
+  }
+
+  async function guardarSector(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (showSectorModal?.mode === 'edit' && showSectorModal.sector) {
+        await apiFetch(`/sectores/${showSectorModal.sector.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(sectorForm),
+        });
+        toast.success('Sector actualizado');
+      } else {
+        await apiFetch('/sectores', { method: 'POST', body: JSON.stringify(sectorForm) });
+        toast.success(`Sector "${sectorForm.nombre}" creado`);
+      }
+      setShowSectorModal(null);
+      cargarSectores();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function eliminarSector(id: string, nombre: string) {
+    if (!confirm(`¿Eliminar el sector "${nombre}"? Las empresas que ya lo usan conservarán el nombre, pero dejará de estar disponible para elegir.`)) return;
+    try {
+      await apiFetch(`/sectores/${id}`, { method: 'DELETE' });
+      toast.success('Sector eliminado');
+      cargarSectores();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  // ===================== Filtros de búsqueda =====================
 
   const empresasFiltradas = useMemo(() => {
     if (!empresas) return [];
@@ -138,19 +296,35 @@ function ModuleContent() {
     return usuarios.filter((u) => [u.nombre, u.apellidos, u.email, u.rol].some((v) => v?.toLowerCase().includes(q)));
   }, [usuarios, query]);
 
+  const sectoresFiltrados = useMemo(() => {
+    if (!sectores) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return sectores;
+    return sectores.filter((s) => s.nombre.toLowerCase().includes(q));
+  }, [sectores, query]);
+
   return (
     <div className="dpo-module">
       <div className="dpo-module-header">
         <div>
           <h2>Empresas y Usuarios</h2>
-          <p className="dpo-module-subtitle">Administra las organizaciones y las cuentas que acceden a la plataforma.</p>
+          <p className="dpo-module-subtitle">Administra organizaciones, cuentas de acceso y el catálogo de sectores.</p>
         </div>
-        <button
-          className="dpo-btn dpo-btn-primary"
-          onClick={() => (tab === 'empresas' ? setShowEmpresaModal(true) : setShowUsuarioModal(true))}
-        >
-          <Icon name="plus" size={16} /> {tab === 'empresas' ? 'Nueva empresa' : 'Nuevo usuario'}
-        </button>
+        {tab === 'empresas' && (
+          <button className="dpo-btn dpo-btn-primary" onClick={() => setShowEmpresaModal(true)}>
+            <Icon name="plus" size={16} /> Nueva empresa
+          </button>
+        )}
+        {tab === 'usuarios' && (
+          <button className="dpo-btn dpo-btn-primary" onClick={abrirCrearUsuario}>
+            <Icon name="plus" size={16} /> Nuevo usuario
+          </button>
+        )}
+        {tab === 'sectores' && (
+          <button className="dpo-btn dpo-btn-primary" onClick={abrirCrearSector}>
+            <Icon name="plus" size={16} /> Nuevo sector
+          </button>
+        )}
       </div>
 
       <div className="dpo-tabs">
@@ -159,6 +333,9 @@ function ModuleContent() {
         </button>
         <button className={tab === 'usuarios' ? 'active' : ''} onClick={() => setTab('usuarios')}>
           <Icon name="users" size={15} /> Usuarios
+        </button>
+        <button className={tab === 'sectores' ? 'active' : ''} onClick={() => setTab('sectores')}>
+          <Icon name="archive" size={15} /> Sectores
         </button>
       </div>
 
@@ -224,7 +401,7 @@ function ModuleContent() {
           <div className="dpo-empty">
             <Icon name="users" size={32} />
             <p className="dpo-empty-title">Sin usuarios todavía</p>
-            <p>Crea usuarios y asígnalos a una empresa con el rol adecuado.</p>
+            <p>Crea usuarios, asígnalos a una o varias empresas y define qué módulos pueden ver.</p>
           </div>
         ) : (
           <div className="dpo-table-wrap">
@@ -234,6 +411,8 @@ function ModuleContent() {
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Rol</th>
+                  <th>Empresas</th>
+                  <th>Módulos</th>
                   <th>Estado</th>
                   <th></th>
                 </tr>
@@ -244,12 +423,24 @@ function ModuleContent() {
                     <td><strong>{u.nombre} {u.apellidos}</strong></td>
                     <td>{u.email}</td>
                     <td><span className="dpo-badge dpo-badge-primary">{u.rol}</span></td>
+                    <td className="dpo-muted">
+                      {u.rol === 'super_admin' ? 'Todas' : u.empresas.map((e) => e.nombre).join(', ') || '—'}
+                    </td>
+                    <td className="dpo-muted">
+                      {u.rol === 'super_admin' ? 'Todos' : `${u.modulosPermitidos?.length ?? 0} módulo(s)`}
+                    </td>
                     <td>
                       <span className={`dpo-badge ${u.activo ? 'dpo-badge-success' : 'dpo-badge-neutral'}`}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirVerUsuario(u)} title="Ver información">
+                        <Icon name="search" size={15} />
+                      </button>
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarUsuario(u)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
                       <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarUsuario(u.id, u.nombre)} title="Eliminar">
                         <Icon name="trash" size={15} />
                       </button>
@@ -261,6 +452,42 @@ function ModuleContent() {
           </div>
         ))}
 
+      {tab === 'sectores' &&
+        (sectores === null ? (
+          <TableSkeleton />
+        ) : sectoresFiltrados.length === 0 ? (
+          <div className="dpo-empty">
+            <Icon name="archive" size={32} />
+            <p className="dpo-empty-title">Sin sectores todavía</p>
+            <p>Crea sectores para que aparezcan en el selector al registrar una empresa.</p>
+          </div>
+        ) : (
+          <div className="dpo-table-wrap">
+            <table className="dpo-table">
+              <thead>
+                <tr><th>Nombre</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                {sectoresFiltrados.map((s) => (
+                  <tr key={s.id}>
+                    <td><strong>{s.nombre}</strong></td>
+                    <td><span className={`dpo-badge ${s.activo ? 'dpo-badge-success' : 'dpo-badge-neutral'}`}>{s.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td className="dpo-table-actions">
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => abrirEditarSector(s)} title="Editar">
+                        <Icon name="clipboard" size={15} />
+                      </button>
+                      <button className="dpo-btn dpo-btn-ghost dpo-btn-sm" onClick={() => eliminarSector(s.id, s.nombre)} title="Eliminar">
+                        <Icon name="trash" size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+      {/* ---------- Modal: crear empresa ---------- */}
       {showEmpresaModal && (
         <Modal title="Nueva empresa" onClose={() => setShowEmpresaModal(false)}>
           <form className="dpo-form" onSubmit={crearEmpresa}>
@@ -275,7 +502,12 @@ function ModuleContent() {
               </div>
               <div className="dpo-field">
                 <label>Sector</label>
-                <input value={nuevaEmpresa.sector} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, sector: e.target.value })} />
+                <select value={nuevaEmpresa.sector} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, sector: e.target.value })}>
+                  <option value="">Selecciona un sector…</option>
+                  {(sectores ?? []).filter((s) => s.activo).map((s) => (
+                    <option key={s.id} value={s.nombre}>{s.nombre}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="dpo-form-row">
@@ -288,6 +520,9 @@ function ModuleContent() {
                 <input type="email" value={nuevaEmpresa.dpoEmail} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, dpoEmail: e.target.value })} />
               </div>
             </div>
+            <p className="dpo-muted" style={{ fontSize: '0.8rem', margin: 0 }}>
+              ¿No está el sector que necesitas? Ve a la pestaña "Sectores" para crearlo.
+            </p>
             <div className="dpo-form-actions">
               <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowEmpresaModal(false)}>Cancelar</button>
               <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
@@ -298,34 +533,138 @@ function ModuleContent() {
         </Modal>
       )}
 
-      {showUsuarioModal && (
-        <Modal title="Nuevo usuario" onClose={() => setShowUsuarioModal(false)}>
-          <form className="dpo-form" onSubmit={crearUsuario}>
+      {/* ---------- Modal: crear/editar/ver usuario ---------- */}
+      {usuarioModal && (
+        <Modal
+          title={usuarioModal.mode === 'create' ? 'Nuevo usuario' : usuarioModal.mode === 'edit' ? 'Editar usuario' : 'Información del usuario'}
+          onClose={() => setUsuarioModal(null)}
+        >
+          {usuarioModal.mode === 'view' && usuarioModal.usuario ? (
+            <div className="dpo-form">
+              <div className="dpo-form-row">
+                <div className="dpo-field"><label>Nombre</label><p>{usuarioModal.usuario.nombre} {usuarioModal.usuario.apellidos}</p></div>
+                <div className="dpo-field"><label>Email</label><p>{usuarioModal.usuario.email}</p></div>
+              </div>
+              <div className="dpo-form-row">
+                <div className="dpo-field"><label>Rol</label><p><span className="dpo-badge dpo-badge-primary">{usuarioModal.usuario.rol}</span></p></div>
+                <div className="dpo-field">
+                  <label>Estado</label>
+                  <p><span className={`dpo-badge ${usuarioModal.usuario.activo ? 'dpo-badge-success' : 'dpo-badge-neutral'}`}>{usuarioModal.usuario.activo ? 'Activo' : 'Inactivo'}</span></p>
+                </div>
+              </div>
+              <div className="dpo-field">
+                <label>Empresas</label>
+                <p>{usuarioModal.usuario.rol === 'super_admin' ? 'Todas (super_admin)' : (usuarioModal.usuario.empresas.map((e) => e.nombre).join(', ') || 'Ninguna asignada')}</p>
+              </div>
+              <div className="dpo-field">
+                <label>Módulos permitidos</label>
+                {usuarioModal.usuario.rol === 'super_admin' ? (
+                  <p>Todos (super_admin)</p>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {(usuarioModal.usuario.modulosPermitidos ?? []).length === 0 && <p className="dpo-muted">Ninguno asignado</p>}
+                    {usuarioModal.usuario.modulosPermitidos?.map((k) => (
+                      <span key={k} className="dpo-badge dpo-badge-neutral">{MODULE_CATALOG.find((m) => m.key === k)?.label ?? k}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="dpo-form-row">
+                <div className="dpo-field"><label>Creado</label><p className="dpo-muted">{new Date(usuarioModal.usuario.createdAt).toLocaleString()}</p></div>
+                <div className="dpo-field"><label>Último acceso</label><p className="dpo-muted">{usuarioModal.usuario.ultimoAcceso ? new Date(usuarioModal.usuario.ultimoAcceso).toLocaleString() : 'Nunca'}</p></div>
+              </div>
+              <div className="dpo-form-actions">
+                <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setUsuarioModal(null)}>Cerrar</button>
+                <button type="button" className="dpo-btn dpo-btn-primary" onClick={() => abrirEditarUsuario(usuarioModal.usuario!)}>Editar</button>
+              </div>
+            </div>
+          ) : (
+            <form className="dpo-form" onSubmit={guardarUsuario}>
+              <div className="dpo-form-row">
+                <div className="dpo-field">
+                  <label>Nombre *</label>
+                  <input value={usuarioForm.nombre} onChange={(e) => setUsuarioForm({ ...usuarioForm, nombre: e.target.value })} required />
+                </div>
+                <div className="dpo-field">
+                  <label>Apellidos</label>
+                  <input value={usuarioForm.apellidos} onChange={(e) => setUsuarioForm({ ...usuarioForm, apellidos: e.target.value })} />
+                </div>
+              </div>
+              <div className="dpo-field">
+                <label>Email *</label>
+                <input type="email" value={usuarioForm.email} onChange={(e) => setUsuarioForm({ ...usuarioForm, email: e.target.value })} required />
+              </div>
+              <div className="dpo-field">
+                <label>{usuarioModal.mode === 'edit' ? 'Nueva contraseña (dejar en blanco para no cambiarla)' : 'Contraseña *'}</label>
+                <input
+                  type="password"
+                  minLength={8}
+                  value={usuarioForm.password}
+                  onChange={(e) => setUsuarioForm({ ...usuarioForm, password: e.target.value })}
+                  required={usuarioModal.mode === 'create'}
+                />
+              </div>
+              <div className="dpo-form-row">
+                <div className="dpo-field">
+                  <label>Rol</label>
+                  <select value={usuarioForm.rol} onChange={(e) => setUsuarioForm({ ...usuarioForm, rol: e.target.value })}>
+                    {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="dpo-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20 }}>
+                  <input type="checkbox" id="usuario-activo" checked={usuarioForm.activo} onChange={(e) => setUsuarioForm({ ...usuarioForm, activo: e.target.checked })} style={{ width: 'auto' }} />
+                  <label htmlFor="usuario-activo" style={{ margin: 0 }}>Usuario activo</label>
+                </div>
+              </div>
+
+              <div className="dpo-field">
+                <label>Empresas a las que pertenece {usuarioForm.rol === 'super_admin' && <span className="dpo-muted">(super_admin ve todas, esta selección es opcional)</span>}</label>
+                <div className="dpo-checklist">
+                  {(empresas ?? []).length === 0 && <p className="dpo-muted">No hay empresas creadas todavía.</p>}
+                  {(empresas ?? []).map((e) => (
+                    <label key={e.id} className="dpo-checklist-item">
+                      <input type="checkbox" checked={usuarioForm.empresaIds.includes(e.id)} onChange={() => toggleEmpresaEnForm(e.id)} />
+                      {e.nombre}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="dpo-field">
+                <label>Módulos que puede ver {usuarioForm.rol === 'super_admin' && <span className="dpo-muted">(super_admin ve todos, esta selección es opcional)</span>}</label>
+                <div className="dpo-checklist">
+                  {MODULE_CATALOG.map((m) => (
+                    <label key={m.key} className="dpo-checklist-item">
+                      <input type="checkbox" checked={usuarioForm.modulosPermitidos.includes(m.key)} onChange={() => toggleModuloEnForm(m.key)} />
+                      {m.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="dpo-form-actions">
+                <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setUsuarioModal(null)}>Cancelar</button>
+                <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
+                  {saving && <span className="dpo-spinner" />} {usuarioModal.mode === 'edit' ? 'Guardar cambios' : 'Crear usuario'}
+                </button>
+              </div>
+            </form>
+          )}
+        </Modal>
+      )}
+
+      {/* ---------- Modal: crear/editar sector ---------- */}
+      {showSectorModal && (
+        <Modal title={showSectorModal.mode === 'edit' ? 'Editar sector' : 'Nuevo sector'} onClose={() => setShowSectorModal(null)}>
+          <form className="dpo-form" onSubmit={guardarSector}>
             <div className="dpo-field">
               <label>Nombre *</label>
-              <input value={nuevoUsuario.nombre} onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })} required />
-            </div>
-            <div className="dpo-field">
-              <label>Email *</label>
-              <input type="email" value={nuevoUsuario.email} onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })} required />
-            </div>
-            <div className="dpo-field">
-              <label>Contraseña *</label>
-              <input type="password" minLength={8} value={nuevoUsuario.password} onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })} required />
-            </div>
-            <div className="dpo-field">
-              <label>Empresa</label>
-              <select value={nuevoUsuario.empresaId} onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, empresaId: e.target.value })}>
-                <option value="">Sin empresa (super admin)</option>
-                {(empresas ?? []).map((e) => (
-                  <option key={e.id} value={e.id}>{e.nombre}</option>
-                ))}
-              </select>
+              <input value={sectorForm.nombre} onChange={(e) => setSectorForm({ nombre: e.target.value })} required minLength={2} />
             </div>
             <div className="dpo-form-actions">
-              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowUsuarioModal(false)}>Cancelar</button>
+              <button type="button" className="dpo-btn dpo-btn-secondary" onClick={() => setShowSectorModal(null)}>Cancelar</button>
               <button type="submit" className="dpo-btn dpo-btn-primary" disabled={saving}>
-                {saving && <span className="dpo-spinner" />} Crear usuario
+                {saving && <span className="dpo-spinner" />} {showSectorModal.mode === 'edit' ? 'Guardar cambios' : 'Crear sector'}
               </button>
             </div>
           </form>

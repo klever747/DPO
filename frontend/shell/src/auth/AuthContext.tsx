@@ -5,7 +5,8 @@ export interface AuthUser {
   sub: string;
   email: string;
   rol: string;
-  empresaId: string | null;
+  empresaIds: string[];
+  modulosPermitidos: string[];
 }
 
 interface AuthContextValue {
@@ -13,6 +14,8 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  /** true si el usuario puede ver el módulo indicado (super_admin siempre puede). */
+  canAccessModule: (moduleKey: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -20,7 +23,13 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 function decodeToken(token: string): AuthUser | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return { sub: payload.sub, email: payload.email, rol: payload.rol, empresaId: payload.empresaId };
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      rol: payload.rol,
+      empresaIds: payload.empresaIds ?? [],
+      modulosPermitidos: payload.modulosPermitidos ?? [],
+    };
   } catch {
     return null;
   }
@@ -50,7 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  function canAccessModule(moduleKey: string) {
+    if (!user) return false;
+    if (user.rol === 'super_admin') return true;
+    return user.modulosPermitidos.includes(moduleKey);
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout, canAccessModule }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

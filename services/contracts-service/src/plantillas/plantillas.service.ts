@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PaginationQueryDto } from '@dpo/common';
 import { PlantillaContrato } from './plantilla-contrato.entity';
 import { CreatePlantillaDto } from './dto/create-plantilla.dto';
@@ -17,9 +17,12 @@ export class PlantillasService {
     return this.repo.save(this.repo.create(dto));
   }
 
-  async findAll(query: PaginationQueryDto, empresaId?: string) {
+  async findAll(query: PaginationQueryDto, empresaIds?: string[]) {
+    if (empresaIds && empresaIds.length === 0) {
+      return { data: [], total: 0, page: query.page, limit: query.limit };
+    }
     const [data, total] = await this.repo.findAndCount({
-      where: empresaId ? { empresaId } : {},
+      where: empresaIds ? { empresaId: In(empresaIds) } : {},
       skip: query.skip,
       take: query.limit,
       order: { createdAt: 'DESC' },

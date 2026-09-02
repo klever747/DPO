@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { CurrentUser, JwtPayload, PaginationQueryDto } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule } from '@dpo/common';
 import { ConsentimientosService } from './consentimientos.service';
 import { CreateConsentimientoDto } from './dto/create-consentimiento.dto';
 import { UpdateConsentimientoDto } from './dto/update-consentimiento.dto';
 
+@RequireModule('consentimientos')
 @Controller('consentimientos')
 export class ConsentimientosController {
   constructor(private readonly service: ConsentimientosService) {}
@@ -15,8 +16,8 @@ export class ConsentimientosController {
 
   @Get()
   findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
-    const empresaId = user.rol === 'super_admin' ? undefined : user.empresaId ?? undefined;
-    return this.service.findAll(query, empresaId);
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.service.findAll(query, empresaIds);
   }
 
   @Get('titular/:titularId')

@@ -3,6 +3,8 @@ export * from './auth/jwt-auth.guard';
 export * from './auth/roles.decorator';
 export * from './auth/roles.guard';
 export * from './auth/current-user.decorator';
+export * from './auth/module-permission.guard';
+export * from './modules';
 export * from './health/health.module';
 export * from './health/health.controller';
 export * from './dto/pagination-query.dto';

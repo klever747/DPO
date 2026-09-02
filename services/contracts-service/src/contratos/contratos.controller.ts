@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { PaginationQueryDto, Roles } from '@dpo/common';
+import { PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { ContratosService } from './contratos.service';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 
+@RequireModule('contratos')
 @Controller('contratos-asignados')
 export class ContratosController {
   constructor(private readonly service: ContratosService) {}

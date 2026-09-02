@@ -1,9 +1,10 @@
-import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsOptional()
-  @IsUUID()
-  empresaId?: string;
+  @IsArray()
+  @IsUUID('4', { each: true })
+  empresaIds?: string[];
 
   @IsString()
   nombre: string;

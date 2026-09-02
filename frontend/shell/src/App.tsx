@@ -14,6 +14,8 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+  const { canAccessModule } = useAuth();
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -26,17 +28,19 @@ export default function App() {
         }
       >
         <Route index element={<DashboardPage />} />
-        {modules.map(({ path, label, Component }) => (
-          <Route
-            key={path}
-            path={path.slice(1)}
-            element={
-              <ModuleBoundary label={label}>
-                <Component />
-              </ModuleBoundary>
-            }
-          />
-        ))}
+        {modules
+          .filter((m) => canAccessModule(m.key))
+          .map(({ path, label, Component }) => (
+            <Route
+              key={path}
+              path={path.slice(1)}
+              element={
+                <ModuleBoundary label={label}>
+                  <Component />
+                </ModuleBoundary>
+              }
+            />
+          ))}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

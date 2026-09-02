@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { CurrentUser, JwtPayload, PaginationQueryDto, Roles } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { BrechasService } from './brechas.service';
 import { CreateBrechaDto } from './dto/create-brecha.dto';
 import { UpdateBrechaDto } from './dto/update-brecha.dto';
 
+@RequireModule('brechas')
 @Controller('brechas')
 export class BrechasController {
   constructor(private readonly service: BrechasService) {}
@@ -16,8 +17,8 @@ export class BrechasController {
 
   @Get()
   findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
-    const empresaId = user.rol === 'super_admin' ? undefined : user.empresaId ?? undefined;
-    return this.service.findAll(query, empresaId);
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.service.findAll(query, empresaIds);
   }
 
   @Get(':id')

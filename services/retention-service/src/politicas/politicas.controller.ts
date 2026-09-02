@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { CurrentUser, JwtPayload, PaginationQueryDto, Roles } from '@dpo/common';
+import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule, Roles } from '@dpo/common';
 import { PoliticasService } from './politicas.service';
 import { CreatePoliticaDto } from './dto/create-politica.dto';
 import { UpdatePoliticaDto } from './dto/update-politica.dto';
 
+@RequireModule('retencion')
 @Controller('politicas-retencion')
 export class PoliticasController {
   constructor(private readonly service: PoliticasService) {}
@@ -16,8 +17,8 @@ export class PoliticasController {
 
   @Get()
   findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
-    const empresaId = user.rol === 'super_admin' ? undefined : user.empresaId ?? undefined;
-    return this.service.findAll(query, empresaId);
+    const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
+    return this.service.findAll(query, empresaIds);
   }
 
   @Get(':id')
