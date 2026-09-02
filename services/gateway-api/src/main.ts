@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { AppModule } from './app.module';
 import { buildServiceRoutes } from './proxy/proxy.config';
+import { logActivity } from './proxy/activity-logger';
 
 async function bootstrap() {
   // bodyParser se desactiva a propósito: el gateway es un proxy transparente
@@ -19,6 +20,7 @@ async function bootstrap() {
         target: route.target,
         changeOrigin: true,
         pathRewrite: { '^/api': '' },
+        onProxyRes: (proxyRes, req) => logActivity(req, proxyRes, route.service),
       }),
     );
   }

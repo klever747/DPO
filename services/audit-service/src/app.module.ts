@@ -13,15 +13,18 @@ import {
 } from '@dpo/common';
 import { Auditoria } from './auditorias/auditoria.entity';
 import { HallazgoAuditoria } from './hallazgos/hallazgo-auditoria.entity';
+import { RegistroActividad } from './registro-actividad/registro-actividad.entity';
 import { AuditoriasModule } from './auditorias/auditorias.module';
+import { RegistroActividadModule } from './registro-actividad/registro-actividad.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register(buildJwtModuleOptions()),
-    TypeOrmModule.forRoot(buildTypeOrmOptions('audit', [Auditoria, HallazgoAuditoria])),
+    TypeOrmModule.forRoot(buildTypeOrmOptions('audit', [Auditoria, HallazgoAuditoria, RegistroActividad])),
     HealthModule.forRoot('audit-service'),
     AuditoriasModule,
+    RegistroActividadModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -19,11 +19,19 @@ import { existsSync } from 'fs';
 import { basename, extname, join } from 'path';
 import { randomUUID } from 'crypto';
 import type { Response } from 'express';
+import { IsEnum, IsOptional } from 'class-validator';
 import { CurrentUser, JwtPayload, PaginationQueryDto, RequireModule } from '@dpo/common';
 import { ConsentimientosService } from './consentimientos.service';
 import { CreateConsentimientoDto } from './dto/create-consentimiento.dto';
 import { UpdateConsentimientoDto } from './dto/update-consentimiento.dto';
 import { EVIDENCIA_UPLOAD_DIR } from './evidencia.constants';
+import { EstadoConsentimiento } from './consentimiento.entity';
+
+class FindConsentimientosQueryDto extends PaginationQueryDto {
+  @IsOptional()
+  @IsEnum(EstadoConsentimiento)
+  estado?: EstadoConsentimiento;
+}
 
 @RequireModule('consentimientos')
 @Controller('consentimientos')
@@ -65,9 +73,9 @@ export class ConsentimientosController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto, @CurrentUser() user: JwtPayload) {
+  findAll(@Query() query: FindConsentimientosQueryDto, @CurrentUser() user: JwtPayload) {
     const empresaIds = user.rol === 'super_admin' ? undefined : user.empresaIds;
-    return this.service.findAll(query, empresaIds);
+    return this.service.findAll(query, empresaIds, query.estado);
   }
 
   @Get('titular/:titularId')

@@ -22,6 +22,7 @@ export function buildServiceRoutes(): ServiceRoute[] {
     { prefix: '/api/empresas', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/usuarios', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/sectores', target: authServiceUrl, service: 'auth-service' },
+    { prefix: '/api/registro-accesos', target: authServiceUrl, service: 'auth-service' },
     { prefix: '/api/titulares', target: consentServiceUrl, service: 'consent-service' },
     { prefix: '/api/consentimientos', target: consentServiceUrl, service: 'consent-service' },
     { prefix: '/api/actividades', target: process.env.RAT_SERVICE_URL || 'http://localhost:3003', service: 'rat-service' },
@@ -34,6 +35,7 @@ export function buildServiceRoutes(): ServiceRoute[] {
     { prefix: '/api/plantillas-contrato', target: process.env.CONTRACTS_SERVICE_URL || 'http://localhost:3010', service: 'contracts-service' },
     { prefix: '/api/contratos-asignados', target: process.env.CONTRACTS_SERVICE_URL || 'http://localhost:3010', service: 'contracts-service' },
     { prefix: '/api/auditorias', target: process.env.AUDIT_SERVICE_URL || 'http://localhost:3011', service: 'audit-service' },
+    { prefix: '/api/registro-actividad', target: process.env.AUDIT_SERVICE_URL || 'http://localhost:3011', service: 'audit-service' },
     { prefix: '/api/evidencias', target: process.env.EVIDENCE_SERVICE_URL || 'http://localhost:3012', service: 'evidence-service' },
   ];
 }

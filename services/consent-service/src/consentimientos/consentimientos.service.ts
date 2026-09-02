@@ -23,12 +23,12 @@ export class ConsentimientosService {
     );
   }
 
-  async findAll(query: PaginationQueryDto, empresaIds?: string[]) {
+  async findAll(query: PaginationQueryDto, empresaIds?: string[], estado?: EstadoConsentimiento) {
     if (empresaIds && empresaIds.length === 0) {
       return { data: [], total: 0, page: query.page, limit: query.limit };
     }
     const [data, total] = await this.repo.findAndCount({
-      where: empresaIds ? { empresaId: In(empresaIds) } : {},
+      where: { ...(empresaIds ? { empresaId: In(empresaIds) } : {}), ...(estado ? { estado } : {}) },
       skip: query.skip,
       take: query.limit,
       order: { createdAt: 'DESC' },

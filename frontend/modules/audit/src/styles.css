@@ -78,6 +78,19 @@
 }
 .dpo-card-body { padding: 20px; }
 
+/* --- Tarjetas de resumen (panel de auditoría) ----------------------------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat-card { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid var(--dpo-border); border-radius: var(--dpo-radius-md); padding: 18px 20px; box-shadow: var(--dpo-shadow-sm); }
+.stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-icon-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
+.stat-icon-success { background: var(--dpo-success-soft); color: var(--dpo-success); }
+.stat-icon-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
+.stat-icon-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
+.stat-value { font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+.stat-label { font-size: 0.8rem; color: var(--dpo-text-muted); margin-top: 2px; }
+.dpo-section-title { font-size: 0.95rem; font-weight: 700; margin: 24px 0 12px; }
+.dpo-section-title:first-child { margin-top: 0; }
+
 /* --- Barra de herramientas / búsqueda ------------------------------------ */
 .dpo-toolbar {
   display: flex;
@@ -190,6 +203,25 @@
 .dpo-badge-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
 .dpo-badge-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
 .dpo-badge-neutral { background: #eef0f6; color: var(--dpo-text-muted); }
+
+.dpo-badge-select {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.dpo-badge-select.dpo-badge-success { background: var(--dpo-success-soft); color: var(--dpo-success); }
+.dpo-badge-select.dpo-badge-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
+.dpo-badge-select.dpo-badge-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
+.dpo-badge-select.dpo-badge-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
+.dpo-badge-select.dpo-badge-neutral { background: #eef0f6; color: var(--dpo-text-muted); }
+.dpo-badge-select option { color: initial; background: #fff; }
 .dpo-badge-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
 
 /* --- Estado vacío / error -------------------------------------------------- */
