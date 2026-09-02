@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { Icon } from '../ui/Icon';
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -28,20 +29,38 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
+      <div className="login-panel">
+        <div className="login-brand">
+          <span className="login-brand-mark">DPO</span>
+          <div>
+            <h1>Plataforma DPO</h1>
+            <p>Protección de datos, consentimientos, RAT y cumplimiento</p>
+          </div>
+        </div>
+        <ul className="login-features">
+          <li><Icon name="shield" size={16} /> Consentimientos y derechos ARCO</li>
+          <li><Icon name="clipboard" size={16} /> Registro de Actividades de Tratamiento</li>
+          <li><Icon name="alert-triangle" size={16} /> Gestión de brechas de seguridad</li>
+        </ul>
+      </div>
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Plataforma DPO</h1>
-        <p>Protección de datos, consentimientos, RAT y cumplimiento</p>
+        <h2>Iniciar sesión</h2>
+        <p className="login-card-subtitle">Ingresa tus credenciales para continuar</p>
         <label>
           Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@empresa.com" required autoFocus />
         </label>
         <label>
           Contraseña
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error">
+            <Icon name="x-circle" size={15} /> {error}
+          </p>
+        )}
         <button type="submit" disabled={loading}>
-          {loading ? 'Ingresando…' : 'Ingresar'}
+          {loading && <span className="btn-spinner" />} {loading ? 'Ingresando…' : 'Ingresar'}
         </button>
       </form>
     </div>

@@ -1,4 +1,5 @@
 import { Component, ReactNode, Suspense } from 'react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   label: string;
@@ -29,9 +30,12 @@ class ModuleErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="module-error">
-          <h3>No se pudo cargar el módulo "{this.props.label}"</h3>
-          <p>{this.state.error.message}</p>
-          <p>Los demás módulos de la plataforma siguen funcionando con normalidad.</p>
+          <Icon name="alert-triangle" size={22} />
+          <div>
+            <h3>No se pudo cargar el módulo "{this.props.label}"</h3>
+            <p>{this.state.error.message}</p>
+            <p className="dpo-muted">Los demás módulos de la plataforma siguen funcionando con normalidad.</p>
+          </div>
         </div>
       );
     }
@@ -39,12 +43,24 @@ class ModuleErrorBoundary extends Component<Props, State> {
   }
 }
 
+function ModuleLoadingFallback({ label }: { label: string }) {
+  return (
+    <div className="module-loading">
+      <div className="module-loading-header">
+        <span className="dpo-spinner dpo-spinner-dark" />
+        <span>Cargando "{label}"…</span>
+      </div>
+      <div className="module-loading-skeleton dpo-skeleton" />
+      <div className="module-loading-skeleton dpo-skeleton" />
+      <div className="module-loading-skeleton dpo-skeleton" style={{ width: '70%' }} />
+    </div>
+  );
+}
+
 export function ModuleBoundary({ label, children }: Props) {
   return (
     <ModuleErrorBoundary label={label}>
-      <Suspense fallback={<div className="module-loading">Cargando módulo “{label}”…</div>}>
-        {children}
-      </Suspense>
+      <Suspense fallback={<ModuleLoadingFallback label={label} />}>{children}</Suspense>
     </ModuleErrorBoundary>
   );
 }

@@ -23,7 +23,8 @@ export class UsuariosService {
       ...dto,
       passwordHash,
     });
-    return this.usuariosRepo.save(usuario);
+    const saved = await this.usuariosRepo.save(usuario);
+    return this.sanitize(saved) as Usuario;
   }
 
   findByEmail(email: string): Promise<Usuario | null> {
