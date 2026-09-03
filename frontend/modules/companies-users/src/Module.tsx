@@ -33,6 +33,7 @@ interface Empresa extends EmpresaRef {
   nif?: string;
   sector?: string;
   pais?: string;
+  representanteLegal?: string;
   dpoEmail?: string;
   activo: boolean;
 }
@@ -69,7 +70,7 @@ interface Departamento {
   activo: boolean;
 }
 
-const emptyEmpresaForm = { nombre: '', nif: '', sector: '', pais: '', dpoEmail: '' };
+const emptyEmpresaForm = { nombre: '', nif: '', sector: '', pais: '', representanteLegal: '', dpoEmail: '' };
 const emptyUsuarioForm = {
   nombre: '',
   apellidos: '',
@@ -177,6 +178,7 @@ function ModuleContent() {
       nif: e.nif ?? '',
       sector: e.sector ?? '',
       pais: e.pais ?? '',
+      representanteLegal: e.representanteLegal ?? '',
       dpoEmail: e.dpoEmail ?? '',
     });
     setEmpresaModal({ mode: 'edit', empresa: e });
@@ -400,7 +402,7 @@ function ModuleContent() {
     if (!empresas) return [];
     const q = query.trim().toLowerCase();
     if (!q) return empresas;
-    return empresas.filter((e) => [e.nombre, e.nif, e.sector, e.pais].some((v) => v?.toLowerCase().includes(q)));
+    return empresas.filter((e) => [e.nombre, e.nif, e.sector, e.pais, e.representanteLegal].some((v) => v?.toLowerCase().includes(q)));
   }, [empresas, query]);
 
   const usuariosFiltrados = useMemo(() => {
@@ -490,9 +492,10 @@ function ModuleContent() {
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>NIF</th>
+                  <th>RUC</th>
                   <th>Sector</th>
                   <th>País</th>
+                  <th>Representante legal</th>
                   <th>DPO</th>
                   <th>Estado</th>
                   <th></th>
@@ -505,6 +508,7 @@ function ModuleContent() {
                     <td>{e.nif || '—'}</td>
                     <td>{e.sector || '—'}</td>
                     <td>{e.pais || '—'}</td>
+                    <td>{e.representanteLegal || '—'}</td>
                     <td>{e.dpoEmail || '—'}</td>
                     <td>
                       <span className={`dpo-badge ${e.activo ? 'dpo-badge-success' : 'dpo-badge-neutral'}`}>
@@ -667,8 +671,8 @@ function ModuleContent() {
             </div>
             <div className="dpo-form-row">
               <div className="dpo-field">
-                <label>NIF</label>
-                <input value={nuevaEmpresa.nif} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, nif: e.target.value })} />
+                <label>RUC</label>
+                <input value={nuevaEmpresa.nif} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, nif: e.target.value })} placeholder="Ej. 1790012345001" />
               </div>
               <div className="dpo-field">
                 <label>Sector</label>
@@ -686,9 +690,13 @@ function ModuleContent() {
                 <input value={nuevaEmpresa.pais} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, pais: e.target.value })} />
               </div>
               <div className="dpo-field">
-                <label>Email del DPO</label>
-                <input type="email" value={nuevaEmpresa.dpoEmail} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, dpoEmail: e.target.value })} />
+                <label>Representante legal</label>
+                <input value={nuevaEmpresa.representanteLegal} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, representanteLegal: e.target.value })} placeholder="Nombre completo" />
               </div>
+            </div>
+            <div className="dpo-field">
+              <label>Email del DPO</label>
+              <input type="email" value={nuevaEmpresa.dpoEmail} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, dpoEmail: e.target.value })} />
             </div>
             <p className="dpo-muted" style={{ fontSize: '0.8rem', margin: 0 }}>
               ¿No está el sector que necesitas? Ve a la pestaña "Sectores" para crearlo.
