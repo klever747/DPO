@@ -1,0 +1,375 @@
+x-backend-env: &backend-env
+  NODE_ENV: production
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:-dpo_platform}
+  POSTGRES_USER: ${POSTGRES_USER:-dpo_admin}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+  POSTGRES_SSL: "false"
+  JWT_SECRET: ${JWT_SECRET:-change_me_super_secret}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+
+x-backend-depends: &backend-depends
+  postgres:
+    condition: service_healthy
+
+services:
+  # ---------------------------------------------------------------------
+  # Base de datos — para producción en Hostinger, sustituir por la cadena
+  # de conexión de su PostgreSQL administrado (ver .env y README).
+  # ---------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dpo_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-dpo_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dpo_admin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [dpo-net]
+
+  # Aplica db/init y db/migrations/* una sola vez y termina.
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      args: { SERVICE: gateway-api }
+    entrypoint: ["node", "scripts/migrate.js"]
+    environment: *backend-env
+    depends_on: *backend-depends
+    networks: [dpo-net]
+
+  # ---------------------------------------------------------------------
+  # Microservicios backend
+  # ---------------------------------------------------------------------
+  auth-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: auth-service } }
+    environment: { <<: *backend-env, AUTH_SERVICE_PORT: "3001" }
+    depends_on: *backend-depends
+    ports: ["3001:3001"]
+    networks: [dpo-net]
+
+  consent-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: consent-service } }
+    environment: { <<: *backend-env, CONSENT_SERVICE_PORT: "3002" }
+    depends_on: *backend-depends
+    ports: ["3002:3002"]
+    volumes:
+      - consent_uploads:/app/uploads
+    networks: [dpo-net]
+
+  rat-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: rat-service } }
+    environment: { <<: *backend-env, RAT_SERVICE_PORT: "3003" }
+    depends_on: *backend-depends
+    ports: ["3003:3003"]
+    networks: [dpo-net]
+
+  arco-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: arco-service } }
+    environment: { <<: *backend-env, ARCO_SERVICE_PORT: "3004" }
+    depends_on: *backend-depends
+    ports: ["3004:3004"]
+    volumes:
+      - arco_uploads:/app/uploads
+    networks: [dpo-net]
+
+  breach-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: breach-service } }
+    environment: { <<: *backend-env, BREACH_SERVICE_PORT: "3005" }
+    depends_on: *backend-depends
+    ports: ["3005:3005"]
+    networks: [dpo-net]
+
+  retention-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: retention-service } }
+    environment: { <<: *backend-env, RETENTION_SERVICE_PORT: "3006" }
+    depends_on: *backend-depends
+    ports: ["3006:3006"]
+    networks: [dpo-net]
+
+  ethics-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: ethics-service } }
+    environment: { <<: *backend-env, ETHICS_SERVICE_PORT: "3007" }
+    depends_on: *backend-depends
+    ports: ["3007:3007"]
+    networks: [dpo-net]
+
+  maturity-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: maturity-service } }
+    environment: { <<: *backend-env, MATURITY_SERVICE_PORT: "3008" }
+    depends_on: *backend-depends
+    ports: ["3008:3008"]
+    networks: [dpo-net]
+
+  training-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: training-service } }
+    environment: { <<: *backend-env, TRAINING_SERVICE_PORT: "3009" }
+    depends_on: *backend-depends
+    ports: ["3009:3009"]
+    networks: [dpo-net]
+
+  contracts-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: contracts-service } }
+    environment: { <<: *backend-env, CONTRACTS_SERVICE_PORT: "3010" }
+    depends_on: *backend-depends
+    ports: ["3010:3010"]
+    volumes:
+      - contracts_uploads:/app/uploads
+    networks: [dpo-net]
+
+  audit-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: audit-service } }
+    environment: { <<: *backend-env, AUDIT_SERVICE_PORT: "3011" }
+    depends_on: *backend-depends
+    ports: ["3011:3011"]
+    networks: [dpo-net]
+
+  evidence-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: evidence-service } }
+    environment: { <<: *backend-env, EVIDENCE_SERVICE_PORT: "3012" }
+    depends_on: *backend-depends
+    ports: ["3012:3012"]
+    volumes:
+      - evidence_uploads:/app/uploads
+    networks: [dpo-net]
+
+  tasks-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: tasks-service } }
+    environment: { <<: *backend-env, TASKS_SERVICE_PORT: "3013" }
+    depends_on: *backend-depends
+    ports: ["3013:3013"]
+    volumes:
+      - tasks_uploads:/app/uploads
+    networks: [dpo-net]
+
+  risk-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: risk-service } }
+    environment: { <<: *backend-env, RISK_SERVICE_PORT: "3014" }
+    depends_on: *backend-depends
+    ports: ["3014:3014"]
+    networks: [dpo-net]
+
+  gateway-api:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: gateway-api } }
+    environment:
+      GATEWAY_PORT: "3000"
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CONSENT_SERVICE_URL: http://consent-service:3002
+      RAT_SERVICE_URL: http://rat-service:3003
+      ARCO_SERVICE_URL: http://arco-service:3004
+      BREACH_SERVICE_URL: http://breach-service:3005
+      RETENTION_SERVICE_URL: http://retention-service:3006
+      ETHICS_SERVICE_URL: http://ethics-service:3007
+      MATURITY_SERVICE_URL: http://maturity-service:3008
+      TRAINING_SERVICE_URL: http://training-service:3009
+      CONTRACTS_SERVICE_URL: http://contracts-service:3010
+      AUDIT_SERVICE_URL: http://audit-service:3011
+      EVIDENCE_SERVICE_URL: http://evidence-service:3012
+      TASKS_SERVICE_URL: http://tasks-service:3013
+      RISK_SERVICE_URL: http://risk-service:3014
+    depends_on:
+      - auth-service
+      - consent-service
+      - rat-service
+      - arco-service
+      - breach-service
+      - retention-service
+      - ethics-service
+      - maturity-service
+      - training-service
+      - contracts-service
+      - audit-service
+      - evidence-service
+      - tasks-service
+      - risk-service
+    ports: ["3000:3000"]
+    networks: [dpo-net]
+
+  # ---------------------------------------------------------------------
+  # Frontend — shell (host) + módulos independientes (remotes)
+  # Cada uno se compila y despliega como un contenedor Nginx separado.
+  # ---------------------------------------------------------------------
+  shell:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/shell
+        # PUBLIC_HOST = IP pública o dominio del servidor donde corre esto
+        # (ver .env: sin él, el shell compilado apuntaría a "localhost",
+        # que en el navegador del usuario final no resuelve al servidor).
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+        VITE_REMOTE_COMPANIES_USERS: http://${PUBLIC_HOST:-localhost}:5175/assets/remoteEntry.js
+        VITE_REMOTE_CONSENTS: http://${PUBLIC_HOST:-localhost}:5176/assets/remoteEntry.js
+        VITE_REMOTE_RAT: http://${PUBLIC_HOST:-localhost}:5177/assets/remoteEntry.js
+        VITE_REMOTE_ARCO: http://${PUBLIC_HOST:-localhost}:5178/assets/remoteEntry.js
+        VITE_REMOTE_BREACHES: http://${PUBLIC_HOST:-localhost}:5179/assets/remoteEntry.js
+        VITE_REMOTE_RETENTION: http://${PUBLIC_HOST:-localhost}:5180/assets/remoteEntry.js
+        VITE_REMOTE_ETHICS_CHANNEL: http://${PUBLIC_HOST:-localhost}:5181/assets/remoteEntry.js
+        VITE_REMOTE_MATURITY: http://${PUBLIC_HOST:-localhost}:5182/assets/remoteEntry.js
+        VITE_REMOTE_TRAINING: http://${PUBLIC_HOST:-localhost}:5183/assets/remoteEntry.js
+        VITE_REMOTE_CONTRACTS: http://${PUBLIC_HOST:-localhost}:5184/assets/remoteEntry.js
+        VITE_REMOTE_AUDIT: http://${PUBLIC_HOST:-localhost}:5185/assets/remoteEntry.js
+        VITE_REMOTE_EVIDENCE: http://${PUBLIC_HOST:-localhost}:5186/assets/remoteEntry.js
+        VITE_REMOTE_TASKS: http://${PUBLIC_HOST:-localhost}:5187/assets/remoteEntry.js
+        VITE_REMOTE_RISK: http://${PUBLIC_HOST:-localhost}:5188/assets/remoteEntry.js
+    ports: ["5173:80"]
+    networks: [dpo-net]
+
+  module-companies-users:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/companies-users
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5175:80"]
+    networks: [dpo-net]
+
+  module-consents:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/consents
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5176:80"]
+    networks: [dpo-net]
+
+  module-rat:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/rat
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5177:80"]
+    networks: [dpo-net]
+
+  module-arco:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/arco
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5178:80"]
+    networks: [dpo-net]
+
+  module-breaches:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/breaches
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5179:80"]
+    networks: [dpo-net]
+
+  module-retention:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/retention
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5180:80"]
+    networks: [dpo-net]
+
+  module-ethics-channel:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/ethics-channel
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5181:80"]
+    networks: [dpo-net]
+
+  module-maturity:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/maturity
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5182:80"]
+    networks: [dpo-net]
+
+  module-training:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/training
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5183:80"]
+    networks: [dpo-net]
+
+  module-contracts:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/contracts
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5184:80"]
+    networks: [dpo-net]
+
+  module-audit:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/audit
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5185:80"]
+    networks: [dpo-net]
+
+  module-evidence:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/evidence
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5186:80"]
+    networks: [dpo-net]
+
+  module-tasks:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/tasks
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5187:80"]
+    networks: [dpo-net]
+
+  module-risk:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/risk
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5188:80"]
+    networks: [dpo-net]
+
+networks:
+  dpo-net:
+
+volumes:
+  pgdata:
+  consent_uploads:
+  contracts_uploads:
+  arco_uploads:
+  evidence_uploads:
+  tasks_uploads:

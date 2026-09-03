@@ -1,0 +1,330 @@
+/* ==========================================================================
+   Sistema de diseño DPO — tokens + componentes compartidos.
+   Este archivo se duplica intencionalmente en cada módulo (arquitectura de
+   módulos independientes: cada uno se compila y despliega por separado, sin
+   depender de un paquete de estilos compartido). Mantener sincronizado al
+   actualizar el diseño.
+   ========================================================================== */
+
+:root {
+  --dpo-bg: #f5f6fb;
+  --dpo-surface: #ffffff;
+  --dpo-border: #e5e7f0;
+  --dpo-text: #1a1f36;
+  --dpo-text-muted: #6b7280;
+  --dpo-primary: #6355ff;
+  --dpo-primary-dark: #4f3fe0;
+  --dpo-primary-soft: #eeecff;
+  --dpo-success: #16a34a;
+  --dpo-success-soft: #e8f8ee;
+  --dpo-danger: #dc2626;
+  --dpo-danger-soft: #fdecec;
+  --dpo-warning: #d97706;
+  --dpo-warning-soft: #fef3e2;
+  --dpo-radius-sm: 8px;
+  --dpo-radius-md: 12px;
+  --dpo-radius-lg: 16px;
+  --dpo-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --dpo-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --dpo-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
+  --dpo-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dpo-module { font-family: var(--dpo-font); color: var(--dpo-text); }
+
+.dpo-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.dpo-module-header h2 { margin: 0; font-size: 1.4rem; font-weight: 700; }
+.dpo-module-subtitle { color: var(--dpo-text-muted); font-size: 0.88rem; margin: 4px 0 0; }
+
+/* --- Botones ------------------------------------------------------------ */
+.dpo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--dpo-radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+  font-family: var(--dpo-font);
+}
+.dpo-btn:active { transform: scale(0.98); }
+.dpo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.dpo-btn-primary { background: var(--dpo-primary); color: #fff; }
+.dpo-btn-primary:hover:not(:disabled) { background: var(--dpo-primary-dark); }
+.dpo-btn-secondary { background: #fff; color: var(--dpo-text); border-color: var(--dpo-border); }
+.dpo-btn-secondary:hover:not(:disabled) { background: #f9fafb; }
+.dpo-btn-danger { background: #fff; color: var(--dpo-danger); border-color: #f3c6c6; }
+.dpo-btn-danger:hover:not(:disabled) { background: var(--dpo-danger-soft); }
+.dpo-btn-ghost { background: transparent; color: var(--dpo-text-muted); padding: 6px 10px; }
+.dpo-btn-ghost:hover:not(:disabled) { background: #f0f1f7; color: var(--dpo-text); }
+.dpo-btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+
+/* --- Tarjetas / superficie ------------------------------------------------ */
+.dpo-card {
+  background: var(--dpo-surface);
+  border: 1px solid var(--dpo-border);
+  border-radius: var(--dpo-radius-md);
+  box-shadow: var(--dpo-shadow-sm);
+}
+.dpo-card-body { padding: 20px; }
+
+/* --- Paginador de tablas -------------------------------------------------- */
+.dpo-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+/* --- Barra de herramientas / búsqueda ------------------------------------ */
+.dpo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.dpo-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--dpo-border);
+  border-radius: var(--dpo-radius-sm);
+  padding: 8px 12px;
+  min-width: 240px;
+  flex: 1;
+  max-width: 360px;
+}
+.dpo-search input { border: none; outline: none; flex: 1; font-size: 0.88rem; font-family: var(--dpo-font); }
+.dpo-search svg { color: var(--dpo-text-muted); flex-shrink: 0; }
+
+/* --- Pestañas ------------------------------------------------------------ */
+.dpo-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.dpo-tabs button {
+  padding: 8px 16px;
+  border: 1px solid var(--dpo-border);
+  background: #fff;
+  border-radius: var(--dpo-radius-sm);
+  cursor: pointer;
+  font-family: var(--dpo-font);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--dpo-text-muted);
+  transition: all 0.15s ease;
+}
+.dpo-tabs button.active { background: var(--dpo-primary); color: #fff; border-color: var(--dpo-primary); }
+.dpo-tabs button:hover:not(.active) { background: #f9fafb; color: var(--dpo-text); }
+
+/* --- Formularios ---------------------------------------------------------- */
+.dpo-form { display: flex; flex-direction: column; gap: 14px; }
+.dpo-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.dpo-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+.dpo-field label { font-size: 0.8rem; font-weight: 600; color: var(--dpo-text-muted); }
+.dpo-field input, .dpo-field select, .dpo-field textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--dpo-border);
+  border-radius: var(--dpo-radius-sm);
+  font-size: 0.88rem;
+  font-family: var(--dpo-font);
+  color: var(--dpo-text);
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.dpo-field input:focus, .dpo-field select:focus, .dpo-field textarea:focus {
+  outline: none;
+  border-color: var(--dpo-primary);
+  box-shadow: 0 0 0 3px var(--dpo-primary-soft);
+}
+.dpo-field textarea { min-height: 80px; resize: vertical; }
+.dpo-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+.dpo-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--dpo-border);
+  border-radius: var(--dpo-radius-sm);
+  background: #fafafe;
+}
+.dpo-checklist-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+.dpo-checklist-item input { width: auto; }
+
+/* --- Tablas ---------------------------------------------------------------- */
+.dpo-table-wrap { overflow-x: auto; border-radius: var(--dpo-radius-md); border: 1px solid var(--dpo-border); }
+.dpo-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.87rem; }
+.dpo-table th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #fafafe;
+  color: var(--dpo-text-muted);
+  font-weight: 600;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--dpo-border);
+}
+.dpo-table td { padding: 12px 14px; border-bottom: 1px solid var(--dpo-border); vertical-align: middle; }
+.dpo-table tbody tr:last-child td { border-bottom: none; }
+.dpo-table tbody tr { transition: background 0.1s ease; }
+.dpo-table tbody tr:hover { background: #fafaff; }
+.dpo-table-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* --- Badges ------------------------------------------------------------- */
+.dpo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.dpo-badge-success { background: var(--dpo-success-soft); color: var(--dpo-success); }
+.dpo-badge-danger { background: var(--dpo-danger-soft); color: var(--dpo-danger); }
+.dpo-badge-warning { background: var(--dpo-warning-soft); color: var(--dpo-warning); }
+.dpo-badge-neutral { background: #eef0f6; color: var(--dpo-text-muted); }
+.dpo-badge-primary { background: var(--dpo-primary-soft); color: var(--dpo-primary-dark); }
+
+/* --- Estado vacío / error -------------------------------------------------- */
+.dpo-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--dpo-text-muted);
+  background: #fff;
+  border: 1px dashed var(--dpo-border);
+  border-radius: var(--dpo-radius-md);
+}
+.dpo-empty svg { color: #c7cbe0; margin-bottom: 10px; }
+.dpo-empty p { margin: 4px 0; }
+.dpo-empty .dpo-empty-title { font-weight: 700; color: var(--dpo-text); font-size: 1rem; }
+
+.dpo-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dpo-danger);
+  background: var(--dpo-danger-soft);
+  padding: 10px 14px;
+  border-radius: var(--dpo-radius-sm);
+  font-size: 0.86rem;
+  margin-bottom: 14px;
+}
+
+/* --- Skeleton de carga ------------------------------------------------------ */
+@keyframes dpo-shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+.dpo-skeleton {
+  border-radius: var(--dpo-radius-sm);
+  background: linear-gradient(90deg, #eceef4 25%, #f5f6fb 37%, #eceef4 63%);
+  background-size: 400px 100%;
+  animation: dpo-shimmer 1.4s ease infinite;
+}
+.dpo-skeleton-row { height: 16px; margin: 10px 14px; }
+
+/* --- Spinner --------------------------------------------------------------- */
+@keyframes dpo-spin { to { transform: rotate(360deg); } }
+.dpo-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dpo-spin 0.6s linear infinite;
+  display: inline-block;
+}
+.dpo-spinner-dark { border-color: rgba(99, 85, 255, 0.25); border-top-color: var(--dpo-primary); }
+
+/* --- Modal ------------------------------------------------------------------ */
+.dpo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 20, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: dpo-fade-in 0.15s ease;
+}
+@keyframes dpo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dpo-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.dpo-modal {
+  background: #fff;
+  border-radius: var(--dpo-radius-lg);
+  box-shadow: var(--dpo-shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  animation: dpo-pop-in 0.18s ease;
+}
+.dpo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dpo-border);
+}
+.dpo-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.dpo-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dpo-text-muted);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+}
+.dpo-modal-close:hover { background: #f0f1f7; color: var(--dpo-text); }
+.dpo-modal-body { padding: 22px; }
+
+/* --- Toasts ------------------------------------------------------------------ */
+.dpo-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+.dpo-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff;
+  border-radius: var(--dpo-radius-md);
+  box-shadow: var(--dpo-shadow-lg);
+  padding: 14px 16px;
+  border-left: 4px solid var(--dpo-text-muted);
+  animation: dpo-toast-in 0.2s ease;
+  font-size: 0.87rem;
+}
+@keyframes dpo-toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+.dpo-toast-success { border-left-color: var(--dpo-success); }
+.dpo-toast-error { border-left-color: var(--dpo-danger); }
+.dpo-toast-icon { flex-shrink: 0; margin-top: 1px; }
+.dpo-toast-success .dpo-toast-icon { color: var(--dpo-success); }
+.dpo-toast-error .dpo-toast-icon { color: var(--dpo-danger); }
+.dpo-toast-close { background: none; border: none; cursor: pointer; color: var(--dpo-text-muted); margin-left: auto; }
+
+/* --- Utilidades ------------------------------------------------------------- */
+.dpo-flex-between { display: flex; align-items: center; justify-content: space-between; }
+.dpo-muted { color: var(--dpo-text-muted); }
+.dpo-mono { font-variant-numeric: tabular-nums; }
