@@ -149,6 +149,13 @@ services:
       - tasks_uploads:/app/uploads
     networks: [dpo-net]
 
+  risk-service:
+    build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: risk-service } }
+    environment: { <<: *backend-env, RISK_SERVICE_PORT: "3014" }
+    depends_on: *backend-depends
+    ports: ["3014:3014"]
+    networks: [dpo-net]
+
   gateway-api:
     build: { context: ., dockerfile: docker/backend.Dockerfile, args: { SERVICE: gateway-api } }
     environment:
@@ -166,6 +173,7 @@ services:
       AUDIT_SERVICE_URL: http://audit-service:3011
       EVIDENCE_SERVICE_URL: http://evidence-service:3012
       TASKS_SERVICE_URL: http://tasks-service:3013
+      RISK_SERVICE_URL: http://risk-service:3014
     depends_on:
       - auth-service
       - consent-service
@@ -180,6 +188,7 @@ services:
       - audit-service
       - evidence-service
       - tasks-service
+      - risk-service
     ports: ["3000:3000"]
     networks: [dpo-net]
 
@@ -210,6 +219,7 @@ services:
         VITE_REMOTE_AUDIT: http://${PUBLIC_HOST:-localhost}:5185/assets/remoteEntry.js
         VITE_REMOTE_EVIDENCE: http://${PUBLIC_HOST:-localhost}:5186/assets/remoteEntry.js
         VITE_REMOTE_TASKS: http://${PUBLIC_HOST:-localhost}:5187/assets/remoteEntry.js
+        VITE_REMOTE_RISK: http://${PUBLIC_HOST:-localhost}:5188/assets/remoteEntry.js
     ports: ["5173:80"]
     networks: [dpo-net]
 
@@ -341,6 +351,16 @@ services:
         MODULE_PATH: frontend/modules/tasks
         VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
     ports: ["5187:80"]
+    networks: [dpo-net]
+
+  module-risk:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        MODULE_PATH: frontend/modules/risk
+        VITE_API_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000/api
+    ports: ["5188:80"]
     networks: [dpo-net]
 
 networks:

@@ -23,6 +23,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'auditoria', label: 'Auditoría' },
   { key: 'evidencias', label: 'Evidencias' },
   { key: 'tareas', label: 'Tareas de Cumplimiento' },
+  { key: 'riesgos', label: 'Análisis de Riesgo (EIPD)' },
 ];
 
 export const MODULE_KEYS = MODULE_CATALOG.map((m) => m.key);

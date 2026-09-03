@@ -28,6 +28,7 @@ export default defineConfig({
         audit: remote('VITE_REMOTE_AUDIT', 5185),
         evidence: remote('VITE_REMOTE_EVIDENCE', 5186),
         tasks: remote('VITE_REMOTE_TASKS', 5187),
+        risk: remote('VITE_REMOTE_RISK', 5188),
       },
       shared: ['react', 'react-dom', 'react-router-dom'],
     }),

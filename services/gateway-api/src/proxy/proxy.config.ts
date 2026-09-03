@@ -40,5 +40,6 @@ export function buildServiceRoutes(): ServiceRoute[] {
     { prefix: '/api/evidencias', target: process.env.EVIDENCE_SERVICE_URL || 'http://localhost:3012', service: 'evidence-service' },
     { prefix: '/api/tareas', target: process.env.TASKS_SERVICE_URL || 'http://localhost:3013', service: 'tasks-service' },
     { prefix: '/api/notificaciones', target: process.env.TASKS_SERVICE_URL || 'http://localhost:3013', service: 'tasks-service' },
+    { prefix: '/api/evaluaciones-riesgo', target: process.env.RISK_SERVICE_URL || 'http://localhost:3014', service: 'risk-service' },
   ];
 }
