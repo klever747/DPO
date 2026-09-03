@@ -9,7 +9,7 @@ import { UpdateBrechaDto } from './dto/update-brecha.dto';
 export class BrechasController {
   constructor(private readonly service: BrechasService) {}
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Post()
   create(@Body() dto: CreateBrechaDto) {
     return this.service.create(dto);
@@ -26,7 +26,7 @@ export class BrechasController {
     return this.service.findOne(id);
   }
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateBrechaDto) {
     return this.service.update(id, dto);

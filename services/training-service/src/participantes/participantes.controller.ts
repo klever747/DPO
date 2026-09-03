@@ -9,7 +9,7 @@ import { UpdateParticipanteDto } from './dto/update-participante.dto';
 export class ParticipantesController {
   constructor(private readonly service: ParticipantesService) {}
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Post()
   create(@Param('formacionId') formacionId: string, @Body() dto: CreateParticipanteDto) {
     return this.service.create(formacionId, dto);
@@ -25,7 +25,7 @@ export class ParticipantesController {
     return this.service.update(id, dto);
   }
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

@@ -9,7 +9,7 @@ import { UpdateFormacionDto } from './dto/update-formacion.dto';
 export class FormacionesController {
   constructor(private readonly service: FormacionesService) {}
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Post()
   create(@Body() dto: CreateFormacionDto) {
     return this.service.create(dto);
@@ -26,7 +26,7 @@ export class FormacionesController {
     return this.service.findOne(id);
   }
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateFormacionDto) {
     return this.service.update(id, dto);

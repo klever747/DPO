@@ -9,7 +9,7 @@ import { UpdateActividadDto } from './dto/update-actividad.dto';
 export class ActividadesController {
   constructor(private readonly service: ActividadesService) {}
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Post()
   create(@Body() dto: CreateActividadDto) {
     return this.service.create(dto);
@@ -26,7 +26,7 @@ export class ActividadesController {
     return this.service.findOne(id);
   }
 
-  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor')
+  @Roles('super_admin', 'admin_empresa', 'dpo', 'gestor', 'empleado')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateActividadDto) {
     return this.service.update(id, dto);
