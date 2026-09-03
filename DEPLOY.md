@@ -89,7 +89,7 @@ Guarda con `Ctrl+O`, Enter, y sal con `Ctrl+X`.
 docker compose up --build -d
 ```
 
-La primera vez tardará varios minutos (compila 12 microservicios + 12
+La primera vez tardará varios minutos (compila 13 microservicios + 13
 módulos frontend + el shell). Cuando termine:
 
 ```bash
@@ -114,7 +114,7 @@ los 12 esquemas (`auth`, `consent`, `rat`, …) con todas sus tablas.
 curl http://localhost:3000/status
 ```
 
-Deberías ver `"gateway":"ok"` y los 12 microservicios en `"reachable":true`.
+Deberías ver `"gateway":"ok"` y los 13 microservicios en `"reachable":true`.
 
 Desde tu navegador (en tu computadora, no en el VPS), abre:
 

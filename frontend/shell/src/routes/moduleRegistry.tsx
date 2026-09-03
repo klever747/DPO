@@ -30,4 +30,5 @@ export const modules: ModuleDef[] = [
   { key: 'contratos', path: '/contratos', label: 'Plantillas de Contratos', icon: 'file-text', Component: lazy(() => import('contracts/Module')) },
   { key: 'auditoria', path: '/auditoria', label: 'Auditoría', icon: 'search', Component: lazy(() => import('audit/Module')) },
   { key: 'evidencias', path: '/evidencias', label: 'Evidencias', icon: 'archive', Component: lazy(() => import('evidence/Module')) },
+  { key: 'tareas', path: '/tareas', label: 'Tareas de Cumplimiento', icon: 'check-circle', Component: lazy(() => import('tasks/Module')) },
 ];

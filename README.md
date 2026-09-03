@@ -116,10 +116,10 @@ Cada módulo:
 │   └── migrate.js          # Aplica db/init y db/migrations/* contra PostgreSQL
 ├── shared/
 │   └── common/             # @dpo/common: guards JWT/roles, health, paginación, TypeORM config
-├── services/               # 12 microservicios + gateway-api (NestJS)
+├── services/               # 13 microservicios + gateway-api (NestJS)
 ├── frontend/
 │   ├── shell/               # Host (React + Module Federation)
-│   └── modules/              # 12 módulos independientes
+│   └── modules/              # 13 módulos independientes
 ├── docker/                 # Dockerfiles genéricos (backend/frontend) + nginx.conf
 ├── docker-compose.yml       # Orquesta BD + 13 servicios backend + 13 frontend
 └── .env.example
@@ -224,8 +224,8 @@ Esto levanta:
   Hostinger. Si en cambio usas un PostgreSQL administrado aparte, omite
   este servicio del compose y apunta `POSTGRES_HOST` a ese host.
 - `migrate` (aplica el esquema una vez),
-- los 12 microservicios + `gateway-api` (puertos 3000-3012),
-- el `shell` y los 12 módulos frontend, cada uno en su propio contenedor
+- los 13 microservicios + `gateway-api` (puertos 3000-3013),
+- el `shell` y los 13 módulos frontend, cada uno en su propio contenedor
   Nginx (puertos 5173, 5175-5186).
 
 La variable `PUBLIC_HOST` (IP o dominio del servidor) se usa **solo** al
@@ -275,7 +275,7 @@ Ver `.env.example` (raíz) para el backend y
 **Completo y probado de extremo a extremo** (build + arranque contra
 PostgreSQL real + pruebas funcionales vía HTTP/navegador):
 
-- Arquitectura completa: 12 microservicios + gateway, 12 módulos frontend + shell.
+- Arquitectura completa: 13 microservicios + gateway, 13 módulos frontend + shell.
 - Esquema de base de datos completo (12 dominios) con migraciones SQL.
 - `auth-service`, `consent-service`, `rat-service`: CRUD completo, login/JWT, roles.
 - `companies-users`, `consents`, `rat`: módulos frontend completos con formularios y tablas.

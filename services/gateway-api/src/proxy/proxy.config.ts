@@ -38,5 +38,7 @@ export function buildServiceRoutes(): ServiceRoute[] {
     { prefix: '/api/auditorias', target: process.env.AUDIT_SERVICE_URL || 'http://localhost:3011', service: 'audit-service' },
     { prefix: '/api/registro-actividad', target: process.env.AUDIT_SERVICE_URL || 'http://localhost:3011', service: 'audit-service' },
     { prefix: '/api/evidencias', target: process.env.EVIDENCE_SERVICE_URL || 'http://localhost:3012', service: 'evidence-service' },
+    { prefix: '/api/tareas', target: process.env.TASKS_SERVICE_URL || 'http://localhost:3013', service: 'tasks-service' },
+    { prefix: '/api/notificaciones', target: process.env.TASKS_SERVICE_URL || 'http://localhost:3013', service: 'tasks-service' },
   ];
 }

@@ -22,6 +22,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'contratos', label: 'Plantillas de Contratos' },
   { key: 'auditoria', label: 'Auditoría' },
   { key: 'evidencias', label: 'Evidencias' },
+  { key: 'tareas', label: 'Tareas de Cumplimiento' },
 ];
 
 export const MODULE_KEYS = MODULE_CATALOG.map((m) => m.key);
