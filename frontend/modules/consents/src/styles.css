@@ -78,6 +78,15 @@
 }
 .dpo-card-body { padding: 20px; }
 
+/* --- Paginador de tablas -------------------------------------------------- */
+.dpo-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
 /* --- Barra de herramientas / búsqueda ------------------------------------ */
 .dpo-toolbar {
   display: flex;

@@ -91,6 +91,8 @@ function ModuleContent() {
   const [nuevoConsentimiento, setNuevoConsentimiento] = useState(emptyConsentimiento);
   const [evidenciaFile, setEvidenciaFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [paginaConsentimientos, setPaginaConsentimientos] = useState(1);
+  const TAM_PAGINA = 10;
 
   async function cargarEmpresas() {
     try {
@@ -114,7 +116,7 @@ function ModuleContent() {
 
   async function cargarConsentimientos() {
     try {
-      const res = await apiFetch<{ data: Consentimiento[] }>('/consentimientos');
+      const res = await apiFetch<{ data: Consentimiento[] }>('/consentimientos?limit=100');
       setConsentimientos(res.data);
     } catch (err) {
       toast.error(`No se pudieron cargar los consentimientos: ${(err as Error).message}`);
@@ -288,9 +290,21 @@ function ModuleContent() {
     if (!q) return consentimientos;
     return consentimientos.filter((c) => {
       const titularNombre = titularesById.get(c.titularId)?.nombre ?? '';
-      return [c.finalidad, c.tipoArchivo, c.estado, c.estadoDocumento, titularNombre].some((v) => v?.toLowerCase().includes(q));
+      const empresaNombre = empresasById.get(c.empresaId)?.nombre ?? '';
+      return [c.finalidad, c.tipoArchivo, c.estado, c.estadoDocumento, titularNombre, empresaNombre].some((v) => v?.toLowerCase().includes(q));
     });
-  }, [consentimientos, query, titularesById]);
+  }, [consentimientos, query, titularesById, empresasById]);
+
+  const totalPaginasConsentimientos = Math.max(1, Math.ceil(consentimientosFiltrados.length / TAM_PAGINA));
+
+  useEffect(() => {
+    setPaginaConsentimientos(1);
+  }, [query, consentimientos]);
+
+  const consentimientosPagina = useMemo(() => {
+    const inicio = (paginaConsentimientos - 1) * TAM_PAGINA;
+    return consentimientosFiltrados.slice(inicio, inicio + TAM_PAGINA);
+  }, [consentimientosFiltrados, paginaConsentimientos]);
 
   return (
     <div className="dpo-module">
@@ -373,12 +387,13 @@ function ModuleContent() {
           <div className="dpo-table-wrap">
             <table className="dpo-table">
               <thead>
-                <tr><th>Titular</th><th>Finalidad</th><th>Tipo de archivo</th><th>Estado</th><th>Estado documento</th><th>Fecha</th><th></th></tr>
+                <tr><th>Titular</th><th>Empresa</th><th>Finalidad</th><th>Tipo de archivo</th><th>Estado</th><th>Estado documento</th><th>Fecha</th><th></th></tr>
               </thead>
               <tbody>
-                {consentimientosFiltrados.map((c) => (
+                {consentimientosPagina.map((c) => (
                   <tr key={c.id}>
                     <td>{titularesById.get(c.titularId)?.nombre ?? '—'}</td>
+                    <td className="dpo-muted">{empresasById.get(c.empresaId)?.nombre ?? '—'}</td>
                     <td>{c.finalidad}</td>
                     <td className="dpo-muted">{TIPOS_ARCHIVO.find((t) => t.value === c.tipoArchivo)?.label ?? '—'}</td>
                     <td><span className={`dpo-badge ${estadoBadge[c.estado] ?? 'dpo-badge-neutral'}`}>{c.estado}</span></td>
@@ -407,6 +422,28 @@ function ModuleContent() {
             </table>
           </div>
         ))}
+
+      {tab === 'consentimientos' && consentimientos !== null && consentimientosFiltrados.length > 0 && (
+        <div className="dpo-pagination">
+          <button
+            className="dpo-btn dpo-btn-secondary dpo-btn-sm"
+            onClick={() => setPaginaConsentimientos((p) => Math.max(1, p - 1))}
+            disabled={paginaConsentimientos <= 1}
+          >
+            ‹ Anterior
+          </button>
+          <span className="dpo-muted" style={{ fontSize: '0.85rem' }}>
+            Página {paginaConsentimientos} de {totalPaginasConsentimientos} ({consentimientosFiltrados.length} en total)
+          </span>
+          <button
+            className="dpo-btn dpo-btn-secondary dpo-btn-sm"
+            onClick={() => setPaginaConsentimientos((p) => Math.min(totalPaginasConsentimientos, p + 1))}
+            disabled={paginaConsentimientos >= totalPaginasConsentimientos}
+          >
+            Siguiente ›
+          </button>
+        </div>
+      )}
 
       {titularModal && (
         <Modal title={titularModal.mode === 'edit' ? 'Editar titular' : 'Nuevo titular'} onClose={() => setTitularModal(null)}>
