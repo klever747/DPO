@@ -47,6 +47,28 @@ interface Notificacion {
 
 const ROLES_REVISORES = new Set(['super_admin', 'admin_empresa', 'dpo', 'auditor']);
 
+/**
+ * Artículos de la LOPDP (Ecuador) más usados para justificar tareas de
+ * cumplimiento asignadas a jefes de área. Verifica la numeración vigente
+ * con tu asesoría legal antes de citarla ante una autoridad, ya que puede
+ * variar con reformas o el Reglamento.
+ */
+const ARTICULOS_LOPDP = [
+  'Art. 7-8 LOPDP — Consentimiento del titular (recolección, firma, custodia)',
+  'Art. 9, 12 LOPDP — Deber de informar / transparencia (incluye avisos y letreros de videovigilancia)',
+  'Art. 13 LOPDP — Derecho de acceso',
+  'Art. 14 LOPDP — Derecho de rectificación y actualización',
+  'Art. 15 LOPDP — Derecho de eliminación / cancelación',
+  'Art. 16 LOPDP — Derecho de oposición',
+  'Art. 17 LOPDP — Derecho de portabilidad',
+  'Art. 39 LOPDP — Medidas de seguridad y protección de datos desde el diseño',
+  'Art. 43-46 LOPDP — Notificación de vulneración de seguridad',
+  'Art. 23, 51 LOPDP — Registro de Actividades de Tratamiento (RAT)',
+  'Art. 48 LOPDP — Designación del Delegado de Protección de Datos (DPO)',
+  'Art. 68 LOPDP — Régimen sancionatorio / infracciones',
+];
+const OTRO_ARTICULO = 'Otro (especificar)';
+
 const emptyForm = {
   empresaId: '',
   asignadoAId: '',
@@ -100,6 +122,7 @@ function ModuleContent() {
 
   const [tareaModal, setTareaModal] = useState<{ mode: 'create' | 'edit'; tarea?: Tarea } | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [baseLegalManual, setBaseLegalManual] = useState(false);
 
   const [evidenciaModal, setEvidenciaModal] = useState<Tarea | null>(null);
   const [evidenciaFile, setEvidenciaFile] = useState<File | null>(null);
@@ -175,6 +198,7 @@ function ModuleContent() {
 
   function abrirCrear() {
     setForm({ ...emptyForm, empresaId: empresas?.length === 1 ? empresas[0].id : '' });
+    setBaseLegalManual(false);
     setTareaModal({ mode: 'create' });
   }
 
@@ -191,6 +215,7 @@ function ModuleContent() {
       baseLegal: t.baseLegal ?? '',
       fechaLimite: t.fechaLimite,
     });
+    setBaseLegalManual(!!t.baseLegal && !ARTICULOS_LOPDP.includes(t.baseLegal));
     setTareaModal({ mode: 'edit', tarea: t });
   }
 
@@ -479,7 +504,31 @@ function ModuleContent() {
             </div>
             <div className="dpo-field">
               <label>Base legal / artículo que la justifica</label>
-              <input value={form.baseLegal} onChange={(e) => setForm({ ...form, baseLegal: e.target.value })} placeholder="Ej. Art. 7 LOPDP - Consentimiento del titular" />
+              <select
+                value={baseLegalManual ? OTRO_ARTICULO : form.baseLegal}
+                onChange={(e) => {
+                  if (e.target.value === OTRO_ARTICULO) {
+                    setBaseLegalManual(true);
+                    setForm({ ...form, baseLegal: '' });
+                  } else {
+                    setBaseLegalManual(false);
+                    setForm({ ...form, baseLegal: e.target.value });
+                  }
+                }}
+              >
+                <option value="">Sin especificar</option>
+                {ARTICULOS_LOPDP.map((a) => <option key={a} value={a}>{a}</option>)}
+                <option value={OTRO_ARTICULO}>{OTRO_ARTICULO}</option>
+              </select>
+              {baseLegalManual && (
+                <input
+                  style={{ marginTop: '0.5rem' }}
+                  value={form.baseLegal}
+                  onChange={(e) => setForm({ ...form, baseLegal: e.target.value })}
+                  placeholder="Escribe el artículo u otra base legal"
+                  autoFocus
+                />
+              )}
             </div>
             <div className="dpo-field">
               <label>Fecha límite *</label>
