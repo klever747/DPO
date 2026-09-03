@@ -31,6 +31,7 @@ interface EmpresaRef {
 
 interface Empresa extends EmpresaRef {
   nif?: string;
+  ruc?: string;
   sector?: string;
   pais?: string;
   representanteLegal?: string;
@@ -70,7 +71,7 @@ interface Departamento {
   activo: boolean;
 }
 
-const emptyEmpresaForm = { nombre: '', nif: '', sector: '', pais: '', representanteLegal: '', dpoEmail: '' };
+const emptyEmpresaForm = { nombre: '', nif: '', ruc: '', sector: '', pais: '', representanteLegal: '', dpoEmail: '' };
 const emptyUsuarioForm = {
   nombre: '',
   apellidos: '',
@@ -176,6 +177,7 @@ function ModuleContent() {
     setNuevaEmpresa({
       nombre: e.nombre,
       nif: e.nif ?? '',
+      ruc: e.ruc ?? '',
       sector: e.sector ?? '',
       pais: e.pais ?? '',
       representanteLegal: e.representanteLegal ?? '',
@@ -402,7 +404,7 @@ function ModuleContent() {
     if (!empresas) return [];
     const q = query.trim().toLowerCase();
     if (!q) return empresas;
-    return empresas.filter((e) => [e.nombre, e.nif, e.sector, e.pais, e.representanteLegal].some((v) => v?.toLowerCase().includes(q)));
+    return empresas.filter((e) => [e.nombre, e.nif, e.ruc, e.sector, e.pais, e.representanteLegal].some((v) => v?.toLowerCase().includes(q)));
   }, [empresas, query]);
 
   const usuariosFiltrados = useMemo(() => {
@@ -492,6 +494,7 @@ function ModuleContent() {
               <thead>
                 <tr>
                   <th>Nombre</th>
+                  <th>Código</th>
                   <th>RUC</th>
                   <th>Sector</th>
                   <th>País</th>
@@ -506,6 +509,7 @@ function ModuleContent() {
                   <tr key={e.id}>
                     <td><strong>{e.nombre}</strong></td>
                     <td>{e.nif || '—'}</td>
+                    <td>{e.ruc || '—'}</td>
                     <td>{e.sector || '—'}</td>
                     <td>{e.pais || '—'}</td>
                     <td>{e.representanteLegal || '—'}</td>
@@ -672,8 +676,20 @@ function ModuleContent() {
             <div className="dpo-form-row">
               <div className="dpo-field">
                 <label>RUC</label>
-                <input value={nuevaEmpresa.nif} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, nif: e.target.value })} placeholder="Ej. 1790012345001" />
+                <input
+                  value={nuevaEmpresa.ruc}
+                  onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, ruc: e.target.value.replace(/\D/g, '') })}
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="13 dígitos, ej. 1790012345001"
+                />
               </div>
+              <div className="dpo-field">
+                <label>Código interno de la empresa</label>
+                <input value={nuevaEmpresa.nif} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, nif: e.target.value })} placeholder="Ej. REITZ-03" />
+              </div>
+            </div>
+            <div className="dpo-form-row">
               <div className="dpo-field">
                 <label>Sector</label>
                 <select value={nuevaEmpresa.sector} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, sector: e.target.value })}>
@@ -683,16 +699,14 @@ function ModuleContent() {
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="dpo-form-row">
               <div className="dpo-field">
                 <label>País</label>
                 <input value={nuevaEmpresa.pais} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, pais: e.target.value })} />
               </div>
-              <div className="dpo-field">
-                <label>Representante legal</label>
-                <input value={nuevaEmpresa.representanteLegal} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, representanteLegal: e.target.value })} placeholder="Nombre completo" />
-              </div>
+            </div>
+            <div className="dpo-field">
+              <label>Representante legal</label>
+              <input value={nuevaEmpresa.representanteLegal} onChange={(e) => setNuevaEmpresa({ ...nuevaEmpresa, representanteLegal: e.target.value })} placeholder="Nombre completo" />
             </div>
             <div className="dpo-field">
               <label>Email del DPO</label>

@@ -12,6 +12,11 @@ export class CreateEmpresaDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(13)
+  ruc?: string;
+
+  @IsOptional()
+  @IsString()
   sector?: string;
 
   @IsOptional()

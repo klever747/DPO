@@ -11,6 +11,9 @@ export class Empresa {
   @Column({ nullable: true, unique: true })
   nif?: string;
 
+  @Column({ nullable: true, unique: true })
+  ruc?: string;
+
   @Column({ nullable: true })
   sector?: string;
 
